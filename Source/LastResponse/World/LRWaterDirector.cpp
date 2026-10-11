@@ -4,11 +4,13 @@
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Net/UnrealNetwork.h"
 #include "Player/LRPlayerCharacter.h"
 
 ALRWaterDirector::ALRWaterDirector()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	bReplicates = true;
 
 	FloodZone = CreateDefaultSubobject<UBoxComponent>(TEXT("FloodZone"));
 	SetRootComponent(FloodZone);
@@ -24,6 +26,14 @@ ALRWaterDirector::ALRWaterDirector()
 	WaterMesh->SetMobility(EComponentMobility::Movable);
 }
 
+void ALRWaterDirector::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ALRWaterDirector, WaterLevel);
+	DOREPLIFETIME(ALRWaterDirector, bRising);
+}
+
 void ALRWaterDirector::BeginPlay()
 {
 	Super::BeginPlay();
@@ -35,7 +45,7 @@ void ALRWaterDirector::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	if (bRising)
+	if (HasAuthority() && bRising)
 	{
 		SetWaterLevel(FMath::Min(WaterLevel + RiseSpeed * DeltaSeconds, MaxWaterLevel));
 	}
@@ -63,6 +73,11 @@ void ALRWaterDirector::SetWaterLevel(float NewLevel)
 	WaterLevel = NewLevel;
 	UpdateWaterVisual();
 	OnWaterLevelChanged.Broadcast(WaterLevel);
+}
+
+void ALRWaterDirector::OnRep_WaterLevel()
+{
+	UpdateWaterVisual();
 }
 
 void ALRWaterDirector::UpdateWaterVisual()

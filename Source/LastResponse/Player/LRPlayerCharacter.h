@@ -10,6 +10,7 @@ class USpotLightComponent;
 class UInputMappingContext;
 class UInputAction;
 class ULRInteractionComponent;
+class ULRInteractableComponent;
 class ULRInventoryComponent;
 
 UCLASS()
@@ -21,6 +22,7 @@ public:
 	ALRPlayerCharacter();
 
 	virtual void Tick(float DeltaSeconds) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UFUNCTION(BlueprintPure, Category = "Player")
 	ULRInteractionComponent* GetInteractionComponent() const { return InteractionComponent; }
@@ -30,6 +32,9 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Player")
 	UCameraComponent* GetCameraComponent() const { return CameraComponent; }
+
+	UFUNCTION(BlueprintPure, Category = "Player")
+	bool IsDowned() const { return bDowned; }
 
 	UFUNCTION(BlueprintCallable, Category = "Player")
 	void SetWaterImmersion(float ImmersionRatio);
@@ -49,6 +54,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Player")
 	void BP_OnWaterImmersionChanged(float ImmersionRatio);
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "Player")
+	void BP_OnDownedChanged(bool bNewDowned);
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
@@ -63,6 +71,13 @@ protected:
 	void StopSprint();
 
 	void RefreshMaxWalkSpeed();
+	void CheckSubmersion();
+
+	UFUNCTION()
+	void HandleReviveCompleted(ULRInteractableComponent* Interactable, ALRPlayerCharacter* Interactor);
+
+	UFUNCTION()
+	void OnRep_Downed();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UCameraComponent> CameraComponent;
@@ -75,6 +90,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<ULRInventoryComponent> InventoryComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<ULRInteractableComponent> ReviveComponent;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputMappingContext> DefaultMappingContext;
@@ -105,6 +123,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Movement")
 	float MaxWaterSpeedMultiplier = 0.35f;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Downed, BlueprintReadOnly, Category = "Player")
+	bool bDowned = false;
 
 private:
 	float WaterImmersion = 0.f;

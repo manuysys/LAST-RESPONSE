@@ -1,11 +1,13 @@
 #include "Interaction/LRBlockedDoor.h"
 #include "Components/StaticMeshComponent.h"
+#include "Net/UnrealNetwork.h"
 #include "Interaction/LRInteractableComponent.h"
 #include "Player/LRPlayerCharacter.h"
 
 ALRBlockedDoor::ALRBlockedDoor()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	bReplicates = true;
 
 	DoorMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("DoorMesh"));
 	SetRootComponent(DoorMesh);
@@ -14,6 +16,13 @@ ALRBlockedDoor::ALRBlockedDoor()
 	Interactable = CreateDefaultSubobject<ULRInteractableComponent>(TEXT("Interactable"));
 	Interactable->HoldDuration = 3.f;
 	Interactable->RequiredToolId = TEXT("PryBar");
+}
+
+void ALRBlockedDoor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ALRBlockedDoor, bOpen);
 }
 
 void ALRBlockedDoor::BeginPlay()
@@ -43,6 +52,16 @@ void ALRBlockedDoor::HandleInteractionCompleted(ULRInteractableComponent* Intera
 	if (Interactable)
 	{
 		Interactable->bEnabled = false;
+	}
+
+	OnRep_Open();
+}
+
+void ALRBlockedDoor::OnRep_Open()
+{
+	if (bOpen)
+	{
+		bAnimating = true;
 	}
 
 	OnDoorOpened.Broadcast();

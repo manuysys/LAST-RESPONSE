@@ -1,6 +1,7 @@
 #include "World/LRCurrentZone.h"
 #include "Components/BoxComponent.h"
 #include "Player/LRPlayerCharacter.h"
+#include "World/LRStormDirector.h"
 
 ALRCurrentZone::ALRCurrentZone()
 {
@@ -28,6 +29,13 @@ void ALRCurrentZone::Tick(float DeltaSeconds)
 	Zone->GetOverlappingActors(OverlappingActors, ALRPlayerCharacter::StaticClass());
 
 	const FVector Direction = PushDirection.GetSafeNormal();
+
+	float WindMultiplier = 1.f;
+	if (const ALRStormDirector* Storm = ALRStormDirector::FindStorm(GetWorld()))
+	{
+		WindMultiplier = Storm->GetWindMultiplier();
+	}
+
 	for (AActor* Actor : OverlappingActors)
 	{
 		ALRPlayerCharacter* Player = Cast<ALRPlayerCharacter>(Actor);
@@ -37,6 +45,6 @@ void ALRCurrentZone::Tick(float DeltaSeconds)
 		}
 
 		const float Multiplier = Player->HasRopeAssist() ? RopeAssistMultiplier : 1.f;
-		Player->AddActorWorldOffset(Direction * PushSpeed * Multiplier * DeltaSeconds, true);
+		Player->AddActorWorldOffset(Direction * PushSpeed * WindMultiplier * Multiplier * DeltaSeconds, true);
 	}
 }

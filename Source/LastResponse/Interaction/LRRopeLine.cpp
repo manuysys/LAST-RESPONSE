@@ -1,12 +1,14 @@
 #include "Interaction/LRRopeLine.h"
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Net/UnrealNetwork.h"
 #include "Interaction/LRRopeAnchor.h"
 #include "Player/LRPlayerCharacter.h"
 
 ALRRopeLine::ALRRopeLine()
 {
 	PrimaryActorTick.bCanEverTick = false;
+	bReplicates = true;
 
 	Corridor = CreateDefaultSubobject<UBoxComponent>(TEXT("Corridor"));
 	SetRootComponent(Corridor);
@@ -19,6 +21,14 @@ ALRRopeLine::ALRRopeLine()
 	RopeMesh->SetupAttachment(Corridor);
 	RopeMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	RopeMesh->SetMobility(EComponentMobility::Movable);
+}
+
+void ALRRopeLine::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ALRRopeLine, EndpointA);
+	DOREPLIFETIME(ALRRopeLine, EndpointB);
 }
 
 void ALRRopeLine::BeginPlay()
@@ -41,10 +51,28 @@ void ALRRopeLine::Initialize(ALRRopeAnchor* AnchorA, ALRRopeAnchor* AnchorB)
 
 	const FVector A = AnchorA->GetActorLocation();
 	const FVector B = AnchorB->GetActorLocation();
-	const FVector Direction = B - A;
+
+	EndpointA = A;
+	EndpointB = B;
+	RebuildFromEndpoints();
+}
+
+void ALRRopeLine::OnRep_Endpoints()
+{
+	RebuildFromEndpoints();
+}
+
+void ALRRopeLine::RebuildFromEndpoints()
+{
+	const FVector Direction = EndpointB - EndpointA;
 	const float Length = Direction.Size();
 
-	SetActorLocation((A + B) * 0.5f);
+	if (Length < KINDA_SMALL_NUMBER)
+	{
+		return;
+	}
+
+	SetActorLocation((EndpointA + EndpointB) * 0.5f);
 	SetActorRotation(FRotator(0.f, Direction.Rotation().Yaw, 0.f));
 
 	if (Corridor)

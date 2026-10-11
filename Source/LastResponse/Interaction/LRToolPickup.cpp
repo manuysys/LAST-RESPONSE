@@ -7,6 +7,7 @@
 ALRToolPickup::ALRToolPickup()
 {
 	PrimaryActorTick.bCanEverTick = false;
+	bReplicates = true;
 
 	PickupMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PickupMesh"));
 	SetRootComponent(PickupMesh);

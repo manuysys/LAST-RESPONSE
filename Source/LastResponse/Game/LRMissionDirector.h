@@ -10,6 +10,7 @@ class ALRWaterDirector;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FLRMissionEndedEvent, FMissionReport, Report);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FLRMissionStartedEvent);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FLRMissionUpdatedEvent, FMissionReport, Report);
 
 UCLASS()
 class LASTRESPONSE_API ALRMissionDirector : public AActor
@@ -20,6 +21,7 @@ public:
 	ALRMissionDirector();
 
 	virtual void Tick(float DeltaSeconds) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UFUNCTION(BlueprintCallable, Category = "Mission")
 	void StartMission();
@@ -33,6 +35,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Mission")
 	void RegisterToolUse(FName ToolId);
 
+	UFUNCTION(BlueprintCallable, Category = "Mission")
+	void CompleteObjective(FName ObjectiveId);
+
 	UFUNCTION(BlueprintPure, Category = "Mission")
 	FMissionReport GetReport() const { return Report; }
 
@@ -45,8 +50,14 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Mission")
 	FLRMissionStartedEvent OnMissionStarted;
 
+	UPROPERTY(BlueprintAssignable, Category = "Mission")
+	FLRMissionUpdatedEvent OnMissionUpdated;
+
 	UFUNCTION(BlueprintImplementableEvent, Category = "Mission")
 	void BP_OnMissionEnded(const FMissionReport& EndedReport);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Mission")
+	void BP_OnMissionUpdated(const FMissionReport& CurrentReport);
 
 protected:
 	virtual void BeginPlay() override;
@@ -57,6 +68,16 @@ protected:
 	UFUNCTION()
 	void HandleWaterLevelChanged(float NewLevel);
 
+	UFUNCTION()
+	void OnRep_Report();
+
+	UFUNCTION()
+	void OnRep_Started();
+
+	void CheckTeamWipe();
+	void ComputeRewards();
+	float ReadVehicleDamage() const;
+
 	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "Mission")
 	TArray<TObjectPtr<ALRVictimCharacter>> Victims;
 
@@ -64,14 +85,24 @@ protected:
 	TObjectPtr<ALRWaterDirector> WaterDirector;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mission")
+	TArray<FName> Objectives;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mission")
 	float TimeLimitSeconds = 900.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mission")
 	bool bStartWaterOnMissionStart = true;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Mission")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mission")
+	FName ContractId = NAME_None;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Report, BlueprintReadOnly, Category = "Mission")
 	FMissionReport Report;
 
-private:
+	UPROPERTY(ReplicatedUsing = OnRep_Started, BlueprintReadOnly, Category = "Mission")
 	bool bStarted = false;
+
+private:
+	TArray<FName> CompletedObjectives;
+	bool bEndedNotified = false;
 };

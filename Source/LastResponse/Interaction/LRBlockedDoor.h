@@ -19,6 +19,7 @@ public:
 	ALRBlockedDoor();
 
 	virtual void Tick(float DeltaSeconds) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UFUNCTION(BlueprintPure, Category = "Door")
 	bool IsOpen() const { return bOpen; }
@@ -35,6 +36,9 @@ protected:
 	UFUNCTION()
 	void HandleInteractionCompleted(ULRInteractableComponent* Interactable, ALRPlayerCharacter* Interactor);
 
+	UFUNCTION()
+	void OnRep_Open();
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UStaticMeshComponent> DoorMesh;
 
@@ -48,6 +52,7 @@ protected:
 	float OpenDuration = 1.f;
 
 private:
+	UPROPERTY(ReplicatedUsing = OnRep_Open)
 	bool bOpen = false;
 	bool bAnimating = false;
 	float OpenAlpha = 0.f;

@@ -19,6 +19,8 @@ class LASTRESPONSE_API ALRRopeAnchor : public AActor
 public:
 	ALRRopeAnchor();
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	UFUNCTION(BlueprintPure, Category = "Rope")
 	bool IsSecured() const { return bSecured; }
 
@@ -34,6 +36,9 @@ protected:
 	UFUNCTION()
 	void HandleInteractionCompleted(ULRInteractableComponent* Interactable, ALRPlayerCharacter* Interactor);
 
+	UFUNCTION()
+	void OnRep_Secured();
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UStaticMeshComponent> AnchorMesh;
 
@@ -47,5 +52,6 @@ protected:
 	TSubclassOf<ALRRopeLine> RopeLineClass;
 
 private:
+	UPROPERTY(ReplicatedUsing = OnRep_Secured)
 	bool bSecured = false;
 };

@@ -25,6 +25,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Victim")
 	ELRVictimState GetVictimState() const { return VictimState; }
 
+	UFUNCTION(BlueprintPure, Category = "Victim")
+	ELRVictimCondition GetCondition() const { return Condition; }
+
 	UFUNCTION(BlueprintCallable, Category = "Victim")
 	void SetVictimState(ELRVictimState NewState);
 
@@ -36,6 +39,12 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Victim")
 	void SetEscortTarget(ALRPlayerCharacter* NewTarget);
+
+	UFUNCTION(BlueprintPure, Category = "Victim")
+	float GetAssistHoldDuration() const;
+
+	UFUNCTION(BlueprintPure, Category = "Victim")
+	float GetFollowSpeed() const;
 
 	UPROPERTY(BlueprintAssignable, Category = "Victim")
 	FLRVictimStateChangedEvent OnVictimStateChanged;
@@ -74,7 +83,10 @@ protected:
 	float EscortDistance = 250.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Victim")
-	float FollowSpeed = 150.f;
+	float BaseFollowSpeed = 170.f;
+
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadOnly, Category = "Victim")
+	ELRVictimCondition Condition = ELRVictimCondition::Stable;
 
 	UPROPERTY(ReplicatedUsing = OnRep_VictimState, BlueprintReadOnly, Category = "Victim")
 	ELRVictimState VictimState = ELRVictimState::Unlocated;

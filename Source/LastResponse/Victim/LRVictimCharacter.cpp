@@ -14,7 +14,7 @@ ALRVictimCharacter::ALRVictimCharacter()
 	bReplicates = true;
 
 	GetCapsuleComponent()->InitCapsuleSize(34.f, 88.f);
-	GetCharacterMovement()->MaxWalkSpeed = FollowSpeed;
+	GetCharacterMovement()->MaxWalkSpeed = BaseFollowSpeed;
 
 	DetectionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("DetectionSphere"));
 	DetectionSphere->SetupAttachment(GetCapsuleComponent());
@@ -40,7 +40,7 @@ void ALRVictimCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	GetCharacterMovement()->MaxWalkSpeed = FollowSpeed;
+	GetCharacterMovement()->MaxWalkSpeed = GetFollowSpeed();
 
 	if (DetectionSphere)
 	{
@@ -57,6 +57,11 @@ void ALRVictimCharacter::BeginPlay()
 	if (AssistComponent)
 	{
 		AssistComponent->OnInteractionCompleted.AddDynamic(this, &ALRVictimCharacter::HandleAssistCompleted);
+		AssistComponent->HoldDuration = GetAssistHoldDuration();
+		if (Condition == ELRVictimCondition::Critical && AssistComponent->RequiredToolId == NAME_None)
+		{
+			AssistComponent->RequiredToolId = TEXT("Medkit");
+		}
 		if (AssistComponent->PromptText.IsEmpty())
 		{
 			AssistComponent->PromptText = NSLOCTEXT("LastResponse", "AssistVictim", "Assist victim");
@@ -69,13 +74,14 @@ void ALRVictimCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ALRVictimCharacter, VictimState);
+	DOREPLIFETIME(ALRVictimCharacter, Condition);
 }
 
 void ALRVictimCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	if (VictimState != ELRVictimState::Assisted || !EscortTarget.IsValid())
+	if (!HasAuthority() || VictimState != ELRVictimState::Assisted || !EscortTarget.IsValid())
 	{
 		return;
 	}
@@ -123,6 +129,36 @@ void ALRVictimCharacter::SetEscortTarget(ALRPlayerCharacter* NewTarget)
 	EscortTarget = NewTarget;
 }
 
+float ALRVictimCharacter::GetAssistHoldDuration() const
+{
+	switch (Condition)
+	{
+	case ELRVictimCondition::Injured:
+		return 3.f;
+	case ELRVictimCondition::Critical:
+		return 4.f;
+	case ELRVictimCondition::Trapped:
+		return 5.f;
+	default:
+		return 2.f;
+	}
+}
+
+float ALRVictimCharacter::GetFollowSpeed() const
+{
+	switch (Condition)
+	{
+	case ELRVictimCondition::Injured:
+		return BaseFollowSpeed * 0.75f;
+	case ELRVictimCondition::Critical:
+		return BaseFollowSpeed * 0.5f;
+	case ELRVictimCondition::Trapped:
+		return BaseFollowSpeed * 0.6f;
+	default:
+		return BaseFollowSpeed;
+	}
+}
+
 void ALRVictimCharacter::OnRep_VictimState()
 {
 	if (AssistComponent)
@@ -130,7 +166,7 @@ void ALRVictimCharacter::OnRep_VictimState()
 		AssistComponent->bEnabled = VictimState != ELRVictimState::Evacuated;
 	}
 
-	if (VictimState == ELRVictimState::Assisted && !EscortTarget.IsValid())
+	if (VictimState == ELRVictimState::Assisted && !EscortTarget.IsValid() && HasAuthority())
 	{
 		if (ALRPlayerCharacter* Player = Cast<ALRPlayerCharacter>(GetWorld()->GetFirstPlayerController() ? GetWorld()->GetFirstPlayerController()->GetPawn() : nullptr))
 		{

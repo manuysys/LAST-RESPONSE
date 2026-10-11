@@ -14,6 +14,15 @@ enum class ELRVictimState : uint8
 };
 
 UENUM(BlueprintType)
+enum class ELRVictimCondition : uint8
+{
+	Stable		UMETA(DisplayName = "Stable"),
+	Injured		UMETA(DisplayName = "Injured"),
+	Critical	UMETA(DisplayName = "Critical"),
+	Trapped		UMETA(DisplayName = "Trapped")
+};
+
+UENUM(BlueprintType)
 enum class ELRMissionEndReason : uint8
 {
 	InProgress,
@@ -44,4 +53,19 @@ struct FMissionReport
 
 	UPROPERTY(BlueprintReadOnly, Category = "Mission")
 	float MaxWaterLevel = 0.f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Mission")
+	int32 ObjectivesCompleted = 0;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Mission")
+	int32 ObjectivesTotal = 0;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Mission", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float VehicleDamage = 0.f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Mission")
+	int32 BudgetEarned = 0;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Mission")
+	int32 ReputationEarned = 0;
 };

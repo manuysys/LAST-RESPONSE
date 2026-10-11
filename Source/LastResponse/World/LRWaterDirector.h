@@ -19,6 +19,7 @@ public:
 	ALRWaterDirector();
 
 	virtual void Tick(float DeltaSeconds) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UFUNCTION(BlueprintCallable, Category = "Water")
 	void StartRise();
@@ -40,13 +41,16 @@ protected:
 
 	void ApplyImmersion();
 
+	UFUNCTION()
+	void OnRep_WaterLevel();
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UStaticMeshComponent> WaterMesh;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UBoxComponent> FloodZone;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_WaterLevel, BlueprintReadWrite, Category = "Water")
 	float WaterLevel = 0.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
@@ -55,7 +59,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
 	float MaxWaterLevel = 250.f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Water")
 	bool bRising = false;
 
 private:

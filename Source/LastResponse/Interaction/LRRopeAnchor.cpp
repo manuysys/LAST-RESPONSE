@@ -1,6 +1,7 @@
 #include "Interaction/LRRopeAnchor.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
+#include "Net/UnrealNetwork.h"
 #include "Interaction/LRInteractableComponent.h"
 #include "Interaction/LRRopeLine.h"
 #include "Player/LRPlayerCharacter.h"
@@ -8,6 +9,7 @@
 ALRRopeAnchor::ALRRopeAnchor()
 {
 	PrimaryActorTick.bCanEverTick = false;
+	bReplicates = true;
 
 	AnchorMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("AnchorMesh"));
 	SetRootComponent(AnchorMesh);
@@ -50,6 +52,18 @@ void ALRRopeAnchor::HandleInteractionCompleted(ULRInteractableComponent* Interac
 		Interactable->bEnabled = false;
 	}
 
+	OnRep_Secured();
+}
+
+void ALRRopeAnchor::OnRep_Secured()
+{
 	OnRopeSecured.Broadcast();
 	BP_OnRopeSecured();
+}
+
+void ALRRopeAnchor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ALRRopeAnchor, bSecured);
 }

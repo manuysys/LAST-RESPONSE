@@ -1,5 +1,6 @@
 #include "Interaction/LRInteractableComponent.h"
 #include "Engine/World.h"
+#include "Net/UnrealNetwork.h"
 #include "Game/LRGameMode.h"
 #include "Game/LRMissionDirector.h"
 #include "Player/LRPlayerCharacter.h"
@@ -8,11 +9,24 @@
 ULRInteractableComponent::ULRInteractableComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+	SetIsReplicatedByDefault(true);
+}
+
+void ULRInteractableComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ULRInteractableComponent, bEnabled);
 }
 
 bool ULRInteractableComponent::CanInteract(const ALRPlayerCharacter* Interactor) const
 {
 	if (!bEnabled || !Interactor)
+	{
+		return false;
+	}
+
+	if (Interactor->IsDowned())
 	{
 		return false;
 	}
@@ -58,4 +72,9 @@ bool ULRInteractableComponent::CanInteractWith_Implementation(const ALRPlayerCha
 
 void ULRInteractableComponent::OnInteractionCompletedEvent_Implementation(ALRPlayerCharacter* Interactor)
 {
+}
+
+void ULRInteractableComponent::OnRep_Enabled()
+{
+	OnEnabledChanged.Broadcast(bEnabled);
 }

@@ -6,16 +6,19 @@
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
+#include "Net/UnrealNetwork.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Game/LRGameMode.h"
 #include "Game/LRMissionDirector.h"
+#include "Interaction/LRInteractableComponent.h"
 #include "Player/LRInteractionComponent.h"
 #include "Player/LRInventoryComponent.h"
 
 ALRPlayerCharacter::ALRPlayerCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	bReplicates = true;
 
 	GetCapsuleComponent()->InitCapsuleSize(34.f, 88.f);
 
@@ -35,9 +38,20 @@ ALRPlayerCharacter::ALRPlayerCharacter()
 	InteractionComponent = CreateDefaultSubobject<ULRInteractionComponent>(TEXT("InteractionComponent"));
 	InventoryComponent = CreateDefaultSubobject<ULRInventoryComponent>(TEXT("InventoryComponent"));
 
+	ReviveComponent = CreateDefaultSubobject<ULRInteractableComponent>(TEXT("ReviveComponent"));
+	ReviveComponent->HoldDuration = 4.f;
+	ReviveComponent->bEnabled = false;
+
 	bUseControllerRotationYaw = true;
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+}
+
+void ALRPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ALRPlayerCharacter, bDowned);
 }
 
 void ALRPlayerCharacter::BeginPlay()
@@ -45,9 +59,19 @@ void ALRPlayerCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	bIncapacitated = false;
+	bSprinting = false;
 	RopeAssistCount = 0;
 	WaterImmersion = 0.f;
 	RefreshMaxWalkSpeed();
+
+	if (ReviveComponent)
+	{
+		ReviveComponent->OnInteractionCompleted.AddDynamic(this, &ALRPlayerCharacter::HandleReviveCompleted);
+		if (ReviveComponent->PromptText.IsEmpty())
+		{
+			ReviveComponent->PromptText = NSLOCTEXT("LastResponse", "ReviveTeammate", "Revive teammate");
+		}
+	}
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
 	{
@@ -65,10 +89,20 @@ void ALRPlayerCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	if (WaterImmersion >= 0.98f && !bIncapacitated)
-	{
-		bIncapacitated = true;
+	CheckSubmersion();
+}
 
+void ALRPlayerCharacter::CheckSubmersion()
+{
+	if (WaterImmersion < 0.98f || bIncapacitated || bDowned)
+	{
+		return;
+	}
+
+	bIncapacitated = true;
+
+	if (GetNetMode() == NM_Standalone)
+	{
 		if (ALRGameMode* GameMode = GetWorld()->GetAuthGameMode<ALRGameMode>())
 		{
 			if (ALRMissionDirector* Director = GameMode->GetMissionDirector())
@@ -76,7 +110,56 @@ void ALRPlayerCharacter::Tick(float DeltaSeconds)
 				Director->FailMission(ELRMissionEndReason::PlayerIncapacitated);
 			}
 		}
+		return;
 	}
+
+	if (HasAuthority())
+	{
+		bDowned = true;
+		OnRep_Downed();
+
+		if (GetCharacterMovement())
+		{
+			GetCharacterMovement()->DisableMovement();
+		}
+
+		if (ReviveComponent)
+		{
+			ReviveComponent->bEnabled = true;
+		}
+
+		if (InteractionComponent)
+		{
+			InteractionComponent->EndInteract();
+		}
+	}
+}
+
+void ALRPlayerCharacter::HandleReviveCompleted(ULRInteractableComponent* Interactable, ALRPlayerCharacter* Interactor)
+{
+	if (!HasAuthority() || !bDowned || !Interactor || Interactor == this)
+	{
+		return;
+	}
+
+	bDowned = false;
+	bIncapacitated = false;
+	OnRep_Downed();
+
+	if (GetCharacterMovement())
+	{
+		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+	}
+
+	if (ReviveComponent)
+	{
+		ReviveComponent->bEnabled = false;
+	}
+}
+
+void ALRPlayerCharacter::OnRep_Downed()
+{
+	BP_OnDownedChanged(bDowned);
 }
 
 void ALRPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -123,6 +206,11 @@ void ALRPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 
 void ALRPlayerCharacter::Move(const FInputActionValue& Value)
 {
+	if (bDowned)
+	{
+		return;
+	}
+
 	const FVector2D Axis = Value.Get<FVector2D>();
 	if (Axis.IsNearlyZero())
 	{
@@ -142,6 +230,11 @@ void ALRPlayerCharacter::Look(const FInputActionValue& Value)
 
 void ALRPlayerCharacter::StartInteract()
 {
+	if (bDowned)
+	{
+		return;
+	}
+
 	if (InteractionComponent)
 	{
 		InteractionComponent->BeginInteract();
@@ -166,6 +259,11 @@ void ALRPlayerCharacter::ToggleFlashlight()
 
 void ALRPlayerCharacter::ToggleCrouch()
 {
+	if (bDowned)
+	{
+		return;
+	}
+
 	if (bIsCrouched)
 	{
 		UnCrouch();

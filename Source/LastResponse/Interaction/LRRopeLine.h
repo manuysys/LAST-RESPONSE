@@ -16,6 +16,8 @@ class LASTRESPONSE_API ALRRopeLine : public AActor
 public:
 	ALRRopeLine();
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	void Initialize(ALRRopeAnchor* AnchorA, ALRRopeAnchor* AnchorB);
 
 protected:
@@ -32,4 +34,15 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UStaticMeshComponent> RopeMesh;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Endpoints)
+	FVector_NetQuantize EndpointA = FVector::ZeroVector;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Endpoints)
+	FVector_NetQuantize EndpointB = FVector::ZeroVector;
+
+	UFUNCTION()
+	void OnRep_Endpoints();
+
+	void RebuildFromEndpoints();
 };

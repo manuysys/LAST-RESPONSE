@@ -8,6 +8,7 @@ class ALRPlayerCharacter;
 class ULRInteractableComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FLRInteractionEvent, ULRInteractableComponent*, Interactable, ALRPlayerCharacter*, Interactor);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FLREnabledChangedEvent, bool, bNewEnabled);
 
 UCLASS(ClassGroup = (LastResponse), meta = (BlueprintSpawnableComponent))
 class LASTRESPONSE_API ULRInteractableComponent : public UActorComponent
@@ -16,6 +17,8 @@ class LASTRESPONSE_API ULRInteractableComponent : public UActorComponent
 
 public:
 	ULRInteractableComponent();
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction")
 	FText PromptText;
@@ -26,11 +29,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction")
 	FName RequiredToolId = NAME_None;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction")
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Enabled, BlueprintReadWrite, Category = "Interaction")
 	bool bEnabled = true;
 
 	UPROPERTY(BlueprintAssignable, Category = "Interaction")
 	FLRInteractionEvent OnInteractionCompleted;
+
+	UPROPERTY(BlueprintAssignable, Category = "Interaction")
+	FLREnabledChangedEvent OnEnabledChanged;
 
 	UFUNCTION(BlueprintCallable, Category = "Interaction")
 	bool CanInteract(const ALRPlayerCharacter* Interactor) const;
@@ -48,4 +54,8 @@ public:
 	UFUNCTION(BlueprintNativeEvent, Category = "Interaction")
 	void OnInteractionCompletedEvent(ALRPlayerCharacter* Interactor);
 	virtual void OnInteractionCompletedEvent_Implementation(ALRPlayerCharacter* Interactor);
+
+protected:
+	UFUNCTION()
+	void OnRep_Enabled();
 };

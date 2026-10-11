@@ -1,0 +1,66 @@
+#include "Station/LRWorkshop.h"
+#include "Components/StaticMeshComponent.h"
+#include "Engine/GameInstance.h"
+#include "EngineUtils.h"
+#include "Engine/World.h"
+#include "Meta/LRProgressionSubsystem.h"
+#include "Player/LRPlayerCharacter.h"
+#include "Player/LRInventoryComponent.h"
+#include "Vehicle/LRRescueVehicle.h"
+
+ALRWorkshop::ALRWorkshop()
+{
+	PrimaryActorTick.bCanEverTick = false;
+	bReplicates = true;
+
+	WorkshopMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WorkshopMesh"));
+	SetRootComponent(WorkshopMesh);
+}
+
+void ALRWorkshop::ServerRepair()
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	ULRProgressionSubsystem* Progression = GetGameInstance() ? GetGameInstance()->GetSubsystem<ULRProgressionSubsystem>() : nullptr;
+	if (!Progression || !Progression->TrySpendBudget(RepairCost))
+	{
+		OnRepairDenied.Broadcast();
+		return;
+	}
+
+	Progression->SetStoredVehicleCondition(100.f);
+
+	for (TActorIterator<ALRRescueVehicle> It(GetWorld()); It; ++It)
+	{
+		It->RepairToFull();
+	}
+
+	OnRepairCompleted.Broadcast();
+}
+
+void ALRWorkshop::ServerBuy(ALRPlayerCharacter* Buyer)
+{
+	if (!HasAuthority() || !Buyer)
+	{
+		return;
+	}
+
+	ULRProgressionSubsystem* Progression = GetGameInstance() ? GetGameInstance()->GetSubsystem<ULRProgressionSubsystem>() : nullptr;
+	ULRInventoryComponent* Inventory = Buyer->GetInventoryComponent();
+
+	if (!Progression || !Inventory || !Progression->TrySpendBudget(RestockCost))
+	{
+		OnPurchaseDenied.Broadcast();
+		return;
+	}
+
+	for (const FName& ToolId : RestockTools)
+	{
+		Inventory->AddTool(ToolId);
+	}
+
+	OnPurchaseCompleted.Broadcast();
+}
