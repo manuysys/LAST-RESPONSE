@@ -27,7 +27,10 @@ void ALRWorkshop::BeginPlay()
 {
 	Super::BeginPlay();
 
-	FLRProto::ApplyColor(WorkshopMesh, FLinearColor(0.45f, 0.4f, 0.25f));
+	if (!FLRProto::UpgradeToRealModel(WorkshopMesh, TEXT("SM_Workshop"), FVector::OneVector, FVector(0.f, 0.f, -75.f)))
+	{
+		FLRProto::ApplyColor(WorkshopMesh, FLinearColor(0.45f, 0.4f, 0.25f));
+	}
 }
 
 void ALRWorkshop::ServerRepair()

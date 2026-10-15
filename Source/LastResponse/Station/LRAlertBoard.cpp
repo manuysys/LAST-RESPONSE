@@ -22,7 +22,10 @@ void ALRAlertBoard::BeginPlay()
 {
 	Super::BeginPlay();
 
-	FLRProto::ApplyColor(BoardMesh, FLinearColor(0.12f, 0.14f, 0.22f));
+	if (!FLRProto::UpgradeToRealModel(BoardMesh, TEXT("SM_AlertBoard"), FVector::OneVector, FVector(0.f, 0.f, -60.f)))
+	{
+		FLRProto::ApplyColor(BoardMesh, FLinearColor(0.12f, 0.14f, 0.22f));
+	}
 }
 
 void ALRAlertBoard::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

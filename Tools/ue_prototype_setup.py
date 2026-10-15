@@ -8,9 +8,12 @@
 #   - Materials/M_PrototypeColor y M_Water (materiales grises con parametro "Color").
 #   - Input/IA_* + IMC_Default / IMC_Vehicle (WASD, mouse, E, F, Ctrl, Shift, R).
 #   - Blueprints/BP_PlayerCharacter, BP_RescueVehicle, BP_GameMode, BP_StationGameMode.
+#   - Meshes/SM_*: importa los modelos de Art/PrototypeMeshes (.obj/.fbx/.glb/.gltf) si existen.
 #   - Maps/Station y Maps/M_FloodTest con geometria graybox, luces, gameplay y PlayerStart.
 #
 # Es idempotente: no recrea assets existentes ni pisa mapas ya creados (FORCE_REBUILD_MAPS = True si queres regenerarlos).
+
+import os
 
 import unreal
 
@@ -27,6 +30,10 @@ MATERIALS_DIR = PROTOTYPE_ROOT + "/Materials"
 INPUT_DIR = PROTOTYPE_ROOT + "/Input"
 BLUEPRINTS_DIR = PROTOTYPE_ROOT + "/Blueprints"
 MAPS_DIR = PROTOTYPE_ROOT + "/Maps"
+MESHES_DIR = PROTOTYPE_ROOT + "/Meshes"
+
+SOURCE_MESHES_DIR = os.path.join(unreal.Paths.project_dir(), "Art", "PrototypeMeshes")
+MESH_EXTENSIONS = (".obj", ".fbx", ".glb", ".gltf")
 
 
 def log(message):
@@ -582,6 +589,44 @@ def build_flood_map(game_mode_class):
 
 
 # ---------------------------------------------------------------------------
+# Importacion de modelos reales (Art/PrototypeMeshes)
+# ---------------------------------------------------------------------------
+
+def import_prototype_meshes():
+    if not os.path.isdir(SOURCE_MESHES_DIR):
+        log("No existe Art/PrototypeMeshes; el juego usa el graybox de primitivas.")
+        return
+
+    file_names = sorted(
+        name for name in os.listdir(SOURCE_MESHES_DIR)
+        if name.lower().endswith(MESH_EXTENSIONS))
+    if not file_names:
+        log("Art/PrototypeMeshes esta vacia; el juego usa el graybox de primitivas.")
+        return
+
+    ensure_directory(MESHES_DIR)
+    for file_name in file_names:
+        full_path = os.path.join(SOURCE_MESHES_DIR, file_name)
+        asset_name = os.path.splitext(file_name)[0]
+        destination = MESHES_DIR + "/" + asset_name
+        try:
+            task = unreal.AssetImportTask()
+            task.filename = full_path
+            task.destination_path = MESHES_DIR
+            task.destination_name = asset_name
+            task.automated = True
+            task.replace_existing = True
+            task.save = True
+            ASSET_TOOLS.import_asset_tasks([task])
+            if EDITOR_ASSETS.does_asset_exist(destination):
+                log("Modelo importado: {0}".format(destination))
+            else:
+                warn("No se pudo importar {0} (revisa warnings del importador).".format(file_name))
+        except Exception as exc:
+            warn("Fallo al importar {0}: {1}".format(file_name, exc))
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -590,6 +635,8 @@ def main():
 
     create_color_material()
     create_water_material()
+
+    import_prototype_meshes()
 
     actions, contexts = build_inputs()
     player_bp, vehicle_bp, game_mode_bp, station_mode_bp = build_blueprints(actions, contexts)

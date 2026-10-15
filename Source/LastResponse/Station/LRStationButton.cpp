@@ -27,7 +27,10 @@ void ALRStationButton::BeginPlay()
 {
 	Super::BeginPlay();
 
-	FLRProto::ApplyColor(ButtonMesh, FLinearColor(0.9f, 0.12f, 0.1f));
+	if (!FLRProto::UpgradeToRealModel(ButtonMesh, TEXT("SM_Button"), FVector::OneVector, FVector(0.f, 0.f, -7.5f)))
+	{
+		FLRProto::ApplyColor(ButtonMesh, FLinearColor(0.9f, 0.12f, 0.1f));
+	}
 
 	if (Interactable)
 	{

@@ -27,7 +27,10 @@ void ALRLoadoutLocker::BeginPlay()
 {
 	Super::BeginPlay();
 
-	FLRProto::ApplyColor(LockerMesh, FLinearColor(0.15f, 0.38f, 0.2f));
+	if (!FLRProto::UpgradeToRealModel(LockerMesh, TEXT("SM_Locker"), FVector::OneVector, FVector(0.f, 0.f, -95.f)))
+	{
+		FLRProto::ApplyColor(LockerMesh, FLinearColor(0.15f, 0.38f, 0.2f));
+	}
 
 	if (Interactable)
 	{

@@ -110,3 +110,35 @@ void FLRProto::ApplyWater(UMeshComponent* Mesh, const FLinearColor& Color, float
 		}
 	}
 }
+
+bool FLRProto::UpgradeToRealModel(UMeshComponent* Mesh, const FString& ModelName, const FVector& Scale, const FVector& RelativeLocation)
+{
+	if (!Mesh || ModelName.IsEmpty())
+	{
+		return false;
+	}
+
+	const FString PackageName = FString::Printf(TEXT("/Game/Prototype/Meshes/%s"), *ModelName);
+	if (!FPackageName::DoesPackageExist(PackageName))
+	{
+		return false;
+	}
+
+	UStaticMesh* Model = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("%s.%s"), *PackageName, *ModelName));
+	if (!Model)
+	{
+		return false;
+	}
+
+	Mesh->SetStaticMesh(Model);
+	Mesh->SetRelativeScale3D(Scale);
+	Mesh->SetRelativeLocation(RelativeLocation);
+
+	UMaterialInterface* CurrentMaterial = Mesh->GetMaterial(0);
+	UMaterialInterface* BasicShapeMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
+	const bool bHasRealMaterial = CurrentMaterial
+		&& CurrentMaterial != BasicShapeMaterial
+		&& !CurrentMaterial->GetPathName().Contains(TEXT("WorldGridMaterial"));
+
+	return bHasRealMaterial;
+}

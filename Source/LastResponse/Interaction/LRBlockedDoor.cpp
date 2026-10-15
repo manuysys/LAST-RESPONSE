@@ -44,7 +44,10 @@ void ALRBlockedDoor::BeginPlay()
 		}
 	}
 
-	FLRProto::ApplyColor(DoorMesh, FLinearColor(0.42f, 0.26f, 0.12f));
+	if (!FLRProto::UpgradeToRealModel(DoorMesh, TEXT("SM_Door"), FVector::OneVector, FVector::ZeroVector))
+	{
+		FLRProto::ApplyColor(DoorMesh, FLinearColor(0.42f, 0.26f, 0.12f));
+	}
 }
 
 void ALRBlockedDoor::HandleInteractionCompleted(ULRInteractableComponent* InteractableComponent, ALRPlayerCharacter* Interactor)

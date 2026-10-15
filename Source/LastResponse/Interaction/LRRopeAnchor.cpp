@@ -40,7 +40,10 @@ void ALRRopeAnchor::BeginPlay()
 		}
 	}
 
-	FLRProto::ApplyColor(AnchorMesh, FLinearColor(0.9f, 0.75f, 0.1f));
+	if (!FLRProto::UpgradeToRealModel(AnchorMesh, TEXT("SM_Anchor"), FVector::OneVector, FVector(0.f, 0.f, -70.f)))
+	{
+		FLRProto::ApplyColor(AnchorMesh, FLinearColor(0.9f, 0.75f, 0.1f));
+	}
 }
 
 void ALRRopeAnchor::HandleInteractionCompleted(ULRInteractableComponent* InteractableComponent, ALRPlayerCharacter* Interactor)

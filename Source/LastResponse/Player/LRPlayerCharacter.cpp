@@ -103,8 +103,16 @@ void ALRPlayerCharacter::BeginPlay()
 		}
 	}
 
-	FLRProto::ApplyColor(PrototypeBodyMesh, FLinearColor(0.95f, 0.42f, 0.08f));
-	FLRProto::ApplyColor(PrototypeHeadMesh, FLinearColor(0.92f, 0.76f, 0.6f));
+	const bool bRealModel = FLRProto::UpgradeToRealModel(PrototypeBodyMesh, TEXT("SM_Player"), FVector::OneVector, FVector(0.f, 0.f, -88.f));
+	if (bRealModel)
+	{
+		PrototypeHeadMesh->SetVisibility(false);
+	}
+	else
+	{
+		FLRProto::ApplyColor(PrototypeBodyMesh, FLinearColor(0.95f, 0.42f, 0.08f));
+		FLRProto::ApplyColor(PrototypeHeadMesh, FLinearColor(0.92f, 0.76f, 0.6f));
+	}
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
 	{

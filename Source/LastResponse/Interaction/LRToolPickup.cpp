@@ -35,7 +35,20 @@ void ALRToolPickup::BeginPlay()
 		}
 	}
 
-	FLRProto::ApplyColor(PickupMesh, FLinearColor(0.1f, 0.85f, 0.95f));
+	FString ModelName = TEXT("SM_Tool_PryBar");
+	if (ToolId == TEXT("Medkit"))
+	{
+		ModelName = TEXT("SM_Tool_Medkit");
+	}
+	else if (ToolId == TEXT("Rope"))
+	{
+		ModelName = TEXT("SM_Tool_Rope");
+	}
+
+	if (!FLRProto::UpgradeToRealModel(PickupMesh, ModelName, FVector::OneVector, FVector(0.f, 0.f, -10.f)))
+	{
+		FLRProto::ApplyColor(PickupMesh, FLinearColor(0.1f, 0.85f, 0.95f));
+	}
 }
 
 void ALRToolPickup::HandleInteractionCompleted(ULRInteractableComponent* InteractableComponent, ALRPlayerCharacter* Interactor)

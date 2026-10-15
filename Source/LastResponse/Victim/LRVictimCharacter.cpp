@@ -84,8 +84,16 @@ void ALRVictimCharacter::BeginPlay()
 
 	ApplyConditionToComponents();
 
-	FLRProto::ApplyColor(PrototypeBodyMesh, FLinearColor(0.72f, 0.09f, 0.09f));
-	FLRProto::ApplyColor(PrototypeHeadMesh, FLinearColor(0.92f, 0.76f, 0.6f));
+	const bool bRealModel = FLRProto::UpgradeToRealModel(PrototypeBodyMesh, TEXT("SM_Victim"), FVector::OneVector, FVector(0.f, 0.f, -88.f));
+	if (bRealModel)
+	{
+		PrototypeHeadMesh->SetVisibility(false);
+	}
+	else
+	{
+		FLRProto::ApplyColor(PrototypeBodyMesh, FLinearColor(0.72f, 0.09f, 0.09f));
+		FLRProto::ApplyColor(PrototypeHeadMesh, FLinearColor(0.92f, 0.76f, 0.6f));
+	}
 }
 
 void ALRVictimCharacter::ApplyConditionToComponents()

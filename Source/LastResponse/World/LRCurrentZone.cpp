@@ -32,7 +32,10 @@ void ALRCurrentZone::BeginPlay()
 {
 	Super::BeginPlay();
 
-	FLRProto::ApplyColor(ZoneVisual, FLinearColor(0.1f, 0.55f, 0.9f));
+	if (!FLRProto::UpgradeToRealModel(ZoneVisual, TEXT("SM_CurrentPad"), FVector::OneVector, FVector(0.f, 0.f, -200.f)))
+	{
+		FLRProto::ApplyColor(ZoneVisual, FLinearColor(0.1f, 0.55f, 0.9f));
+	}
 }
 
 void ALRCurrentZone::Tick(float DeltaSeconds)

@@ -43,7 +43,10 @@ void ALRHeavyDebris::BeginPlay()
 		}
 	}
 
-	FLRProto::ApplyColor(DebrisMesh, FLinearColor(0.28f, 0.29f, 0.33f));
+	if (!FLRProto::UpgradeToRealModel(DebrisMesh, TEXT("SM_Debris"), FVector::OneVector, FVector(0.f, 0.f, -45.f)))
+	{
+		FLRProto::ApplyColor(DebrisMesh, FLinearColor(0.28f, 0.29f, 0.33f));
+	}
 }
 
 void ALRHeavyDebris::HandleInteractionCompleted(ULRInteractableComponent* Interactable, ALRPlayerCharacter* Interactor)

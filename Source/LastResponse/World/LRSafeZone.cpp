@@ -36,7 +36,10 @@ void ALRSafeZone::BeginPlay()
 		Zone->OnComponentBeginOverlap.AddDynamic(this, &ALRSafeZone::HandleBeginOverlap);
 	}
 
-	FLRProto::ApplyColor(ZoneVisual, FLinearColor(0.05f, 0.85f, 0.25f));
+	if (!FLRProto::UpgradeToRealModel(ZoneVisual, TEXT("SM_ZonePad"), FVector::OneVector, FVector(0.f, 0.f, -200.f)))
+	{
+		FLRProto::ApplyColor(ZoneVisual, FLinearColor(0.05f, 0.85f, 0.25f));
+	}
 }
 
 void ALRSafeZone::HandleBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)

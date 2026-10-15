@@ -1,7 +1,7 @@
 # LAST RESPONSE
 
 Simulador cooperativo de rescate en desastres naturales. Primera persona, PC/Steam.
-Estado actual: **Fases 1–4 implementadas en C++** (prototipo single player, cooperativo 2–4, vertical slice con estación y vehículo, herramientas de testeo) + **graybox visual**: todos los actores tienen mallas primitivas y colores por código, y `Tools/ue_prototype_setup.py` genera materiales, inputs, Blueprints y los mapas de prueba en un paso.
+Estado actual: **Fases 1–4 implementadas en C++** (prototipo single player, cooperativo 2–4, vertical slice con estación y vehículo, herramientas de testeo) + **graybox visual** (todos los actores tienen mallas y colores por código) + **pipeline de modelos reales**: `Tools/generate_prototype_meshes.py` genera 15 modelos low-poly (.obj/.mtl) y el juego los usa automáticamente si existen en `/Game/Prototype/Meshes` (si no, cae al graybox). `Tools/ue_prototype_setup.py` genera materiales, inputs, Blueprints, importa los modelos y arma los mapas de prueba en un paso.
 
 ## Requisitos
 
@@ -66,6 +66,14 @@ Si el agua supera la cabeza del jugador, en single player la misión falla; en c
 
 El C++ asigna mallas primitivas del engine (`/Engine/BasicShapes`) y colores por instancia (versión dinámica de `M_PrototypeColor`) para que todo se vea sin assets externos: jugador (naranja, oculto en primera persona) y víctimas (rojas) con cuerpo y cabeza, camioneta (chasis rojo, cabina blanca, ruedas y baliza), puerta, escombros, anclas y cuerda fina, pickups, tablero, armero, taller, botones, agua translúcida, corriente y zona segura (pad verde). Si los materiales de `/Game/Prototype/Materials` todavía no existen se usa `BasicShapeMaterial` del engine (gris), así que el proyecto corre igual.
 
+## Modelos reales (pipeline de 3 capas)
+
+1. **Generador**: `python Tools/generate_prototype_meshes.py` escribe 15 modelos low-poly propios (.obj + .mtl, en centímetros) en `Art/PrototypeMeshes/`: `SM_Player`, `SM_Victim`, `SM_Truck` (con ruedas y baliza), `SM_Door` (pivot en la bisagra), `SM_Debris`, `SM_Anchor`, `SM_Tool_PryBar`, `SM_Tool_Medkit`, `SM_Tool_Rope`, `SM_AlertBoard`, `SM_Locker`, `SM_Workshop`, `SM_Button`, `SM_ZonePad` y `SM_CurrentPad`. Solo necesita Python 3, sin dependencias.
+2. **Importación**: `Tools/ue_prototype_setup.py` los importa a `/Game/Prototype/Meshes` automáticamente (soporta `.obj`, `.fbx`, `.glb`, `.gltf`).
+3. **Uso en juego**: `FLRProto::UpgradeToRealModel` (C++) asigna el modelo al actor en `BeginPlay`; si el modelo tiene materiales propios, se descarta el color graybox; si el asset no existe, el actor queda como estaba. Agua y cuerda no tienen modelo (siguen siendo primitivas).
+
+**¿Querés mejores modelos?** Reemplazá cualquier archivo de `Art/PrototypeMeshes/` respetando el nombre (por ejemplo `SM_Truck.glb`) con uno generado con IA —Meshy, Tripo, Hunyuan3D/TRELLIS (Hugging Face Spaces)— o un pack gratis (Kenney, Fab) y volvé a correr `Tools/ue_prototype_setup.py`: no hace falta tocar C++. Convención de pivots: personajes y props apoyados en el suelo llevan el pivot en el centro de la base; la puerta lo lleva en la bisagra (borde X = 0, altura centrada).
+
 ## Setup automático del editor
 
 `Tools/ue_prototype_setup.py` crea todo lo que antes había que armar a mano (requiere el plugin *Python Editor Script Plugin*):
@@ -73,7 +81,8 @@ El C++ asigna mallas primitivas del engine (`/Engine/BasicShapes`) y colores por
 1. Materiales `M_PrototypeColor` (parámetro `Color`) y `M_Water` (parámetros `Color` y `Opacity`, translúcido).
 2. Inputs: `IMC_Default` (WASD, mouse, E, F, Ctrl, Shift) e `IMC_Vehicle` (WASD, E salir, R sirena) con sus `IA_*`.
 3. Blueprints: `BP_PlayerCharacter` y `BP_RescueVehicle` con los inputs asignados; `BP_GameMode` y `BP_StationGameMode` usando ese pawn.
-4. Mapas `Station` y `M_FloodTest` con geometría graybox, luces, víctimas (`Critical`/`Trapped`), puerta con palanca, escombros coop, cuerdas (anclas linkeadas), pickups, corriente, zona segura, directores y `PlayerStart`, con el GameMode ya configurado.
+4. Modelos de `Art/PrototypeMeshes/` importados a `/Game/Prototype/Meshes` (si no hay archivos, el juego usa el graybox).
+5. Mapas `Station` y `M_FloodTest` con geometría graybox, luces, víctimas (`Critical`/`Trapped`), puerta con palanca, escombros coop, cuerdas (anclas linkeadas), pickups, corriente, zona segura, directores y `PlayerStart`, con el GameMode ya configurado.
 
 Uso: compilar C++ (paso 2 de *Abrir el proyecto*), guardar todo y ejecutar en el Output Log:
 

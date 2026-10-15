@@ -19,4 +19,6 @@ struct LASTRESPONSE_API FLRProto
 
 	static void ApplyColor(UMeshComponent* Mesh, const FLinearColor& Color);
 	static void ApplyWater(UMeshComponent* Mesh, const FLinearColor& Color, float Opacity);
+
+	static bool UpgradeToRealModel(UMeshComponent* Mesh, const FString& ModelName, const FVector& Scale, const FVector& RelativeLocation);
 };

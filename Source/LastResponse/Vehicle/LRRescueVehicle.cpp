@@ -118,12 +118,25 @@ void ALRRescueVehicle::BeginPlay()
 
 	ApplyStoredCondition();
 
-	FLRProto::ApplyColor(BodyMesh, FLinearColor(0.75f, 0.08f, 0.08f));
-	FLRProto::ApplyColor(CabinMesh, FLinearColor(0.92f, 0.92f, 0.92f));
-	FLRProto::ApplyColor(SirenMesh, FLinearColor(0.95f, 0.5f, 0.05f));
-	for (UStaticMeshComponent* Wheel : WheelMeshes)
+	const bool bRealModel = FLRProto::UpgradeToRealModel(BodyMesh, TEXT("SM_Truck"), FVector::OneVector, FVector::ZeroVector);
+	if (bRealModel)
 	{
-		FLRProto::ApplyColor(Wheel, FLinearColor(0.05f, 0.05f, 0.05f));
+		CabinMesh->SetVisibility(false);
+		SirenMesh->SetVisibility(false);
+		for (UStaticMeshComponent* Wheel : WheelMeshes)
+		{
+			Wheel->SetVisibility(false);
+		}
+	}
+	else
+	{
+		FLRProto::ApplyColor(BodyMesh, FLinearColor(0.75f, 0.08f, 0.08f));
+		FLRProto::ApplyColor(CabinMesh, FLinearColor(0.92f, 0.92f, 0.92f));
+		FLRProto::ApplyColor(SirenMesh, FLinearColor(0.95f, 0.5f, 0.05f));
+		for (UStaticMeshComponent* Wheel : WheelMeshes)
+		{
+			FLRProto::ApplyColor(Wheel, FLinearColor(0.05f, 0.05f, 0.05f));
+		}
 	}
 
 	if (EnterComponent)

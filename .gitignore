@@ -16,3 +16,5 @@ Saved/
 *.xcworkspace
 *.user
 *.tmp
+__pycache__/
+*.pyc
