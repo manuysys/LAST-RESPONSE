@@ -1,6 +1,7 @@
 #include "Interaction/LRHeavyDebris.h"
 #include "Components/StaticMeshComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "Prototype/LRPrototypeVisuals.h"
 #include "Interaction/LRCoopInteractableComponent.h"
 #include "Player/LRPlayerCharacter.h"
 
@@ -11,6 +12,11 @@ ALRHeavyDebris::ALRHeavyDebris()
 
 	DebrisMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("DebrisMesh"));
 	SetRootComponent(DebrisMesh);
+	DebrisMesh->SetRelativeScale3D(FVector(2.4f, 1.8f, 0.9f));
+	if (UStaticMesh* Cube = FLRProto::CubeMesh())
+	{
+		DebrisMesh->SetStaticMesh(Cube);
+	}
 
 	CoopInteractable = CreateDefaultSubobject<ULRCoopInteractableComponent>(TEXT("CoopInteractable"));
 	CoopInteractable->HoldDuration = 4.f;
@@ -36,6 +42,8 @@ void ALRHeavyDebris::BeginPlay()
 			CoopInteractable->PromptText = NSLOCTEXT("LastResponse", "ClearDebris", "Clear debris (needs 2)");
 		}
 	}
+
+	FLRProto::ApplyColor(DebrisMesh, FLinearColor(0.28f, 0.29f, 0.33f));
 }
 
 void ALRHeavyDebris::HandleInteractionCompleted(ULRInteractableComponent* Interactable, ALRPlayerCharacter* Interactor)

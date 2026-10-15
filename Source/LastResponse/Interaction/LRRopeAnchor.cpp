@@ -2,6 +2,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
 #include "Net/UnrealNetwork.h"
+#include "Prototype/LRPrototypeVisuals.h"
 #include "Interaction/LRInteractableComponent.h"
 #include "Interaction/LRRopeLine.h"
 #include "Player/LRPlayerCharacter.h"
@@ -13,10 +14,17 @@ ALRRopeAnchor::ALRRopeAnchor()
 
 	AnchorMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("AnchorMesh"));
 	SetRootComponent(AnchorMesh);
+	AnchorMesh->SetRelativeScale3D(FVector(0.35f, 0.35f, 1.4f));
+	if (UStaticMesh* Cylinder = FLRProto::CylinderMesh())
+	{
+		AnchorMesh->SetStaticMesh(Cylinder);
+	}
 
 	Interactable = CreateDefaultSubobject<ULRInteractableComponent>(TEXT("Interactable"));
 	Interactable->HoldDuration = 2.f;
 	Interactable->RequiredToolId = TEXT("Rope");
+
+	RopeLineClass = ALRRopeLine::StaticClass();
 }
 
 void ALRRopeAnchor::BeginPlay()
@@ -31,6 +39,8 @@ void ALRRopeAnchor::BeginPlay()
 			Interactable->PromptText = NSLOCTEXT("LastResponse", "SecureRope", "Secure rope");
 		}
 	}
+
+	FLRProto::ApplyColor(AnchorMesh, FLinearColor(0.9f, 0.75f, 0.1f));
 }
 
 void ALRRopeAnchor::HandleInteractionCompleted(ULRInteractableComponent* InteractableComponent, ALRPlayerCharacter* Interactor)

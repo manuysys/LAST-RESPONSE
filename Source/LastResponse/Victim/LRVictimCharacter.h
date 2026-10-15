@@ -7,6 +7,7 @@
 
 class ULRVictimInteractableComponent;
 class USphereComponent;
+class UStaticMeshComponent;
 class ALRPlayerCharacter;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FLRVictimStateChangedEvent, ALRVictimCharacter*, Victim, ELRVictimState, NewState);
@@ -72,6 +73,12 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<USphereComponent> ReachSphere;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UStaticMeshComponent> PrototypeBodyMesh;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UStaticMeshComponent> PrototypeHeadMesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Victim")
 	float DetectionRadius = 600.f;

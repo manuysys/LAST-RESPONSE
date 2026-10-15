@@ -4,6 +4,7 @@
 #include "Meta/LRMetaLibrary.h"
 #include "Player/LRPlayerCharacter.h"
 #include "Player/LRInventoryComponent.h"
+#include "Prototype/LRPrototypeVisuals.h"
 
 ALRLoadoutLocker::ALRLoadoutLocker()
 {
@@ -12,6 +13,11 @@ ALRLoadoutLocker::ALRLoadoutLocker()
 
 	LockerMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("LockerMesh"));
 	SetRootComponent(LockerMesh);
+	LockerMesh->SetRelativeScale3D(FVector(1.0f, 0.7f, 1.9f));
+	if (UStaticMesh* Cube = FLRProto::CubeMesh())
+	{
+		LockerMesh->SetStaticMesh(Cube);
+	}
 
 	Interactable = CreateDefaultSubobject<ULRInteractableComponent>(TEXT("Interactable"));
 	Interactable->HoldDuration = 1.f;
@@ -20,6 +26,8 @@ ALRLoadoutLocker::ALRLoadoutLocker()
 void ALRLoadoutLocker::BeginPlay()
 {
 	Super::BeginPlay();
+
+	FLRProto::ApplyColor(LockerMesh, FLinearColor(0.15f, 0.38f, 0.2f));
 
 	if (Interactable)
 	{

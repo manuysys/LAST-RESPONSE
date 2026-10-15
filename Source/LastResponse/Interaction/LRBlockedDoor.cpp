@@ -1,6 +1,7 @@
 #include "Interaction/LRBlockedDoor.h"
 #include "Components/StaticMeshComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "Prototype/LRPrototypeVisuals.h"
 #include "Interaction/LRInteractableComponent.h"
 #include "Player/LRPlayerCharacter.h"
 
@@ -12,6 +13,11 @@ ALRBlockedDoor::ALRBlockedDoor()
 	DoorMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("DoorMesh"));
 	SetRootComponent(DoorMesh);
 	DoorMesh->SetMobility(EComponentMobility::Movable);
+	DoorMesh->SetRelativeScale3D(FVector(1.1f, 0.15f, 2.1f));
+	if (UStaticMesh* Cube = FLRProto::CubeMesh())
+	{
+		DoorMesh->SetStaticMesh(Cube);
+	}
 
 	Interactable = CreateDefaultSubobject<ULRInteractableComponent>(TEXT("Interactable"));
 	Interactable->HoldDuration = 3.f;
@@ -37,6 +43,8 @@ void ALRBlockedDoor::BeginPlay()
 			Interactable->PromptText = NSLOCTEXT("LastResponse", "ForceDoor", "Force door open");
 		}
 	}
+
+	FLRProto::ApplyColor(DoorMesh, FLinearColor(0.42f, 0.26f, 0.12f));
 }
 
 void ALRBlockedDoor::HandleInteractionCompleted(ULRInteractableComponent* InteractableComponent, ALRPlayerCharacter* Interactor)

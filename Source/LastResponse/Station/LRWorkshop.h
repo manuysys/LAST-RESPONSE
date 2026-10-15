@@ -36,6 +36,8 @@ public:
 	FLRWorkshopEvent OnPurchaseDenied;
 
 protected:
+	virtual void BeginPlay() override;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UStaticMeshComponent> WorkshopMesh;
 

@@ -6,6 +6,7 @@
 #include "Meta/LRProgressionSubsystem.h"
 #include "Player/LRPlayerCharacter.h"
 #include "Player/LRInventoryComponent.h"
+#include "Prototype/LRPrototypeVisuals.h"
 #include "Vehicle/LRRescueVehicle.h"
 
 ALRWorkshop::ALRWorkshop()
@@ -15,6 +16,18 @@ ALRWorkshop::ALRWorkshop()
 
 	WorkshopMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WorkshopMesh"));
 	SetRootComponent(WorkshopMesh);
+	WorkshopMesh->SetRelativeScale3D(FVector(3.2f, 2.2f, 1.5f));
+	if (UStaticMesh* Cube = FLRProto::CubeMesh())
+	{
+		WorkshopMesh->SetStaticMesh(Cube);
+	}
+}
+
+void ALRWorkshop::BeginPlay()
+{
+	Super::BeginPlay();
+
+	FLRProto::ApplyColor(WorkshopMesh, FLinearColor(0.45f, 0.4f, 0.25f));
 }
 
 void ALRWorkshop::ServerRepair()

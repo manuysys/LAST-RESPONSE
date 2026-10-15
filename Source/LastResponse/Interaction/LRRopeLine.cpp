@@ -2,6 +2,7 @@
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "Prototype/LRPrototypeVisuals.h"
 #include "Interaction/LRRopeAnchor.h"
 #include "Player/LRPlayerCharacter.h"
 
@@ -21,6 +22,10 @@ ALRRopeLine::ALRRopeLine()
 	RopeMesh->SetupAttachment(Corridor);
 	RopeMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	RopeMesh->SetMobility(EComponentMobility::Movable);
+	if (UStaticMesh* Cube = FLRProto::CubeMesh())
+	{
+		RopeMesh->SetStaticMesh(Cube);
+	}
 }
 
 void ALRRopeLine::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -34,6 +39,8 @@ void ALRRopeLine::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 void ALRRopeLine::BeginPlay()
 {
 	Super::BeginPlay();
+
+	FLRProto::ApplyColor(RopeMesh, FLinearColor(0.85f, 0.7f, 0.15f));
 
 	if (Corridor)
 	{
@@ -82,7 +89,7 @@ void ALRRopeLine::RebuildFromEndpoints()
 
 	if (RopeMesh)
 	{
-		RopeMesh->SetRelativeScale3D(FVector(FMath::Max(Length / 100.f, 0.1f), 1.f, 1.f));
+		RopeMesh->SetRelativeScale3D(FVector(FMath::Max(Length / 100.f, 0.1f), 0.06f, 0.06f));
 	}
 }
 

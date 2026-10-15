@@ -1,7 +1,7 @@
 # LAST RESPONSE
 
 Simulador cooperativo de rescate en desastres naturales. Primera persona, PC/Steam.
-Estado actual: **Fases 1–3 implementadas en C++** (prototipo single player, cooperativo 2–4, vertical slice con estación y vehículo). Fase 4 aporta herramientas de testeo.
+Estado actual: **Fases 1–4 implementadas en C++** (prototipo single player, cooperativo 2–4, vertical slice con estación y vehículo, herramientas de testeo) + **graybox visual**: todos los actores tienen mallas primitivas y colores por código, y `Tools/ue_prototype_setup.py` genera materiales, inputs, Blueprints y los mapas de prueba en un paso.
 
 ## Requisitos
 
@@ -62,11 +62,23 @@ Si el agua supera la cabeza del jugador, en single player la misión falla; en c
 - Consola: `LR_SetWater`, `LR_ForceRise`, `LR_GiveTool`, `LR_WinMission`, `LR_TeleportToVictim`, `LR_CompleteObjective`, `LR_SetStorm`, `LR_AddBudget` (GameMode ya usa este cheat manager). Los cheats viajan al servidor, así que funcionan también desde clientes.
 - Cada misión genera un CSV en `Saved/Playtest/` con eventos (víctimas, herramientas, objetivos, resultado) y tiempos relativos al inicio de la sesión.
 
-## Assets a crear en el editor (no incluidos)
+## Graybox (cómo se ve el prototipo)
 
-- `IMC_Default` + `IA_Move`, `IA_Look`, `IA_Interact`, `IA_Flashlight`, `IA_Crouch`, `IA_Sprint`; `IMC_Vehicle` + `IA_Drive` (Vector2D), `IA_VehicleExit`, `IA_Siren`.
-- `BP_PlayerCharacter` (hijo de `ALRPlayerCharacter`) con el mapping context y las acciones asignadas.
-- `BP_Victim`, `BP_BlockedDoor`, `BP_HeavyDebris`, `BP_ToolPickup`, `BP_RopeAnchor`, `BP_RopeLine`, `BP_WaterDirector`, `BP_CurrentZone`, `BP_SafeZone`, `BP_StormDirector`, `BP_MissionDirector`.
-- `BP_RescueVehicle` (hijo de `ALRRescueVehicle`) con malla, mapping de vehículo y sonido de sirena.
-- `BP_AlertBoard`, `BP_LoadoutLocker`, `BP_Workshop` con contratos y ofertas configurados.
-- Mapas `Station` (GameMode `LRStationGameMode`) y `M_FloodTest` (GameMode `LRGameMode`) con los actores colocados.
+El C++ asigna mallas primitivas del engine (`/Engine/BasicShapes`) y colores por instancia (versión dinámica de `M_PrototypeColor`) para que todo se vea sin assets externos: jugador (naranja, oculto en primera persona) y víctimas (rojas) con cuerpo y cabeza, camioneta (chasis rojo, cabina blanca, ruedas y baliza), puerta, escombros, anclas y cuerda fina, pickups, tablero, armero, taller, botones, agua translúcida, corriente y zona segura (pad verde). Si los materiales de `/Game/Prototype/Materials` todavía no existen se usa `BasicShapeMaterial` del engine (gris), así que el proyecto corre igual.
+
+## Setup automático del editor
+
+`Tools/ue_prototype_setup.py` crea todo lo que antes había que armar a mano (requiere el plugin *Python Editor Script Plugin*):
+
+1. Materiales `M_PrototypeColor` (parámetro `Color`) y `M_Water` (parámetros `Color` y `Opacity`, translúcido).
+2. Inputs: `IMC_Default` (WASD, mouse, E, F, Ctrl, Shift) e `IMC_Vehicle` (WASD, E salir, R sirena) con sus `IA_*`.
+3. Blueprints: `BP_PlayerCharacter` y `BP_RescueVehicle` con los inputs asignados; `BP_GameMode` y `BP_StationGameMode` usando ese pawn.
+4. Mapas `Station` y `M_FloodTest` con geometría graybox, luces, víctimas (`Critical`/`Trapped`), puerta con palanca, escombros coop, cuerdas (anclas linkeadas), pickups, corriente, zona segura, directores y `PlayerStart`, con el GameMode ya configurado.
+
+Uso: compilar C++ (paso 2 de *Abrir el proyecto*), guardar todo y ejecutar en el Output Log:
+
+```
+py "<ruta al repo>/Tools/ue_prototype_setup.py"
+```
+
+Es idempotente (no pisa assets ni mapas existentes; poner `FORCE_REBUILD_MAPS = True` para regenerar los mapas). `Config/DefaultGame.ini` incluye `/Game/Prototype` en `DirectoriesToAlwaysCook` para que se hornee en builds empaquetadas.

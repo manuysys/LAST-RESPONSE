@@ -5,6 +5,7 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "Prototype/LRPrototypeVisuals.h"
 #include "Player/LRPlayerCharacter.h"
 
 ALRWaterDirector::ALRWaterDirector()
@@ -24,6 +25,11 @@ ALRWaterDirector::ALRWaterDirector()
 	WaterMesh->SetupAttachment(FloodZone);
 	WaterMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	WaterMesh->SetMobility(EComponentMobility::Movable);
+	WaterMesh->SetRelativeScale3D(FVector(60.f, 60.f, 1.f));
+	if (UStaticMesh* Plane = FLRProto::PlaneMesh())
+	{
+		WaterMesh->SetStaticMesh(Plane);
+	}
 }
 
 void ALRWaterDirector::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -38,6 +44,7 @@ void ALRWaterDirector::BeginPlay()
 {
 	Super::BeginPlay();
 
+	FLRProto::ApplyWater(WaterMesh, FLinearColor(0.04f, 0.3f, 0.5f), 0.55f);
 	UpdateWaterVisual();
 }
 

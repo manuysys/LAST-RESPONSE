@@ -1,6 +1,7 @@
 #include "Vehicle/LRRescueVehicle.h"
 #include "Camera/CameraComponent.h"
 #include "Components/AudioComponent.h"
+#include "Components/SceneComponent.h"
 #include "Components/SpotLightComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/LocalPlayer.h"
@@ -15,6 +16,7 @@
 #include "Interaction/LRInteractableComponent.h"
 #include "Meta/LRProgressionSubsystem.h"
 #include "Player/LRPlayerCharacter.h"
+#include "Prototype/LRPrototypeVisuals.h"
 #include "Vehicle/LRVehicleSeatInteractableComponent.h"
 
 ALRRescueVehicle::ALRRescueVehicle()
@@ -22,12 +24,64 @@ ALRRescueVehicle::ALRRescueVehicle()
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
 
+	VehicleRoot = CreateDefaultSubobject<USceneComponent>(TEXT("VehicleRoot"));
+	SetRootComponent(VehicleRoot);
+
 	BodyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BodyMesh"));
-	SetRootComponent(BodyMesh);
+	BodyMesh->SetupAttachment(VehicleRoot);
 	BodyMesh->SetSimulatePhysics(false);
+	BodyMesh->SetRelativeLocation(FVector(0.f, 0.f, 85.f));
+	BodyMesh->SetRelativeScale3D(FVector(4.6f, 2.0f, 1.2f));
+	if (UStaticMesh* Cube = FLRProto::CubeMesh())
+	{
+		BodyMesh->SetStaticMesh(Cube);
+	}
+
+	CabinMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CabinMesh"));
+	CabinMesh->SetupAttachment(VehicleRoot);
+	CabinMesh->SetRelativeLocation(FVector(-60.f, 0.f, 180.f));
+	CabinMesh->SetRelativeScale3D(FVector(1.7f, 1.9f, 1.1f));
+	CabinMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	if (UStaticMesh* Cube = FLRProto::CubeMesh())
+	{
+		CabinMesh->SetStaticMesh(Cube);
+	}
+
+	SirenMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SirenMesh"));
+	SirenMesh->SetupAttachment(VehicleRoot);
+	SirenMesh->SetRelativeLocation(FVector(-60.f, 0.f, 245.f));
+	SirenMesh->SetRelativeScale3D(FVector(0.3f, 0.3f, 0.3f));
+	SirenMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	if (UStaticMesh* Sphere = FLRProto::SphereMesh())
+	{
+		SirenMesh->SetStaticMesh(Sphere);
+	}
+
+	const FVector WheelOffsets[] =
+	{
+		FVector(150.f, -95.f, 35.f),
+		FVector(150.f, 95.f, 35.f),
+		FVector(-150.f, -95.f, 35.f),
+		FVector(-150.f, 95.f, 35.f)
+	};
+
+	for (int32 WheelIndex = 0; WheelIndex < UE_ARRAY_COUNT(WheelOffsets); ++WheelIndex)
+	{
+		UStaticMeshComponent* Wheel = CreateDefaultSubobject<UStaticMeshComponent>(*FString::Printf(TEXT("Wheel%d"), WheelIndex));
+		Wheel->SetupAttachment(VehicleRoot);
+		Wheel->SetRelativeLocation(WheelOffsets[WheelIndex]);
+		Wheel->SetRelativeRotation(FRotator(0.f, 0.f, 90.f));
+		Wheel->SetRelativeScale3D(FVector(0.7f, 0.7f, 0.25f));
+		Wheel->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		if (UStaticMesh* Cylinder = FLRProto::CylinderMesh())
+		{
+			Wheel->SetStaticMesh(Cylinder);
+		}
+		WheelMeshes.Add(Wheel);
+	}
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-	CameraBoom->SetupAttachment(BodyMesh);
+	CameraBoom->SetupAttachment(VehicleRoot);
 	CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, 200.f));
 	CameraBoom->TargetArmLength = 700.f;
 	CameraBoom->bUsePawnControlRotation = true;
@@ -36,7 +90,7 @@ ALRRescueVehicle::ALRRescueVehicle()
 	ChaseCamera->SetupAttachment(CameraBoom);
 
 	SirenLight = CreateDefaultSubobject<USpotLightComponent>(TEXT("SirenLight"));
-	SirenLight->SetupAttachment(BodyMesh);
+	SirenLight->SetupAttachment(VehicleRoot);
 	SirenLight->SetRelativeLocation(FVector(0.f, 0.f, 220.f));
 	SirenLight->SetVisibility(false);
 	SirenLight->Intensity = 8000.f;
@@ -63,6 +117,14 @@ void ALRRescueVehicle::BeginPlay()
 	Super::BeginPlay();
 
 	ApplyStoredCondition();
+
+	FLRProto::ApplyColor(BodyMesh, FLinearColor(0.75f, 0.08f, 0.08f));
+	FLRProto::ApplyColor(CabinMesh, FLinearColor(0.92f, 0.92f, 0.92f));
+	FLRProto::ApplyColor(SirenMesh, FLinearColor(0.95f, 0.5f, 0.05f));
+	for (UStaticMeshComponent* Wheel : WheelMeshes)
+	{
+		FLRProto::ApplyColor(Wheel, FLinearColor(0.05f, 0.05f, 0.05f));
+	}
 
 	if (EnterComponent)
 	{
@@ -323,7 +385,7 @@ void ALRRescueVehicle::AttachRider(ALRPlayerCharacter* Rider, const FVector& Sea
 		Movement->StopMovementImmediately();
 	}
 
-	Rider->AttachToComponent(BodyMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+	Rider->AttachToComponent(VehicleRoot, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 	Rider->SetActorRelativeLocation(SeatOffset);
 }
 

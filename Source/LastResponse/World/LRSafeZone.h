@@ -5,6 +5,7 @@
 #include "LRSafeZone.generated.h"
 
 class UBoxComponent;
+class UStaticMeshComponent;
 
 UCLASS()
 class LASTRESPONSE_API ALRSafeZone : public AActor
@@ -22,4 +23,7 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UBoxComponent> Zone;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UStaticMeshComponent> ZoneVisual;
 };

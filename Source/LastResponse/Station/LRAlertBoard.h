@@ -41,6 +41,8 @@ public:
 	void BP_OnContractSelected(int32 ContractIndex);
 
 protected:
+	virtual void BeginPlay() override;
+
 	UFUNCTION()
 	void OnRep_CurrentIndex();
 

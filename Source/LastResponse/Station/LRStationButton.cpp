@@ -2,6 +2,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Interaction/LRInteractableComponent.h"
 #include "Player/LRPlayerCharacter.h"
+#include "Prototype/LRPrototypeVisuals.h"
 #include "Station/LRAlertBoard.h"
 #include "Station/LRWorkshop.h"
 
@@ -12,6 +13,11 @@ ALRStationButton::ALRStationButton()
 
 	ButtonMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ButtonMesh"));
 	SetRootComponent(ButtonMesh);
+	ButtonMesh->SetRelativeScale3D(FVector(0.35f, 0.35f, 0.15f));
+	if (UStaticMesh* Cylinder = FLRProto::CylinderMesh())
+	{
+		ButtonMesh->SetStaticMesh(Cylinder);
+	}
 
 	Interactable = CreateDefaultSubobject<ULRInteractableComponent>(TEXT("Interactable"));
 	Interactable->HoldDuration = 0.5f;
@@ -20,6 +26,8 @@ ALRStationButton::ALRStationButton()
 void ALRStationButton::BeginPlay()
 {
 	Super::BeginPlay();
+
+	FLRProto::ApplyColor(ButtonMesh, FLinearColor(0.9f, 0.12f, 0.1f));
 
 	if (Interactable)
 	{

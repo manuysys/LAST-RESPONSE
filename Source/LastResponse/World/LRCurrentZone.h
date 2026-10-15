@@ -5,6 +5,7 @@
 #include "LRCurrentZone.generated.h"
 
 class UBoxComponent;
+class UStaticMeshComponent;
 
 UCLASS()
 class LASTRESPONSE_API ALRCurrentZone : public AActor
@@ -16,12 +17,17 @@ public:
 
 	virtual void Tick(float DeltaSeconds) override;
 
+	virtual void BeginPlay() override;
+
 	UFUNCTION(BlueprintCallable, Category = "Current")
 	void SetActive(bool bNewActive) { bActive = bNewActive; }
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UBoxComponent> Zone;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UStaticMeshComponent> ZoneVisual;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Current")
 	FVector PushDirection = FVector(1.f, 0.f, 0.f);

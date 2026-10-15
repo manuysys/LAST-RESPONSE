@@ -2,6 +2,8 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SpotLightComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Prototype/LRPrototypeVisuals.h"
 #include "Engine/GameInstance.h"
 #include "Engine/LocalPlayer.h"
 #include "Engine/World.h"
@@ -42,6 +44,27 @@ ALRPlayerCharacter::ALRPlayerCharacter()
 	FlashlightComponent->InnerConeAngle = 18.f;
 	FlashlightComponent->OuterConeAngle = 32.f;
 
+	PrototypeBodyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PrototypeBodyMesh"));
+	PrototypeBodyMesh->SetupAttachment(GetCapsuleComponent());
+	PrototypeBodyMesh->SetRelativeScale3D(FVector(0.55f, 0.55f, 1.76f));
+	PrototypeBodyMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	PrototypeBodyMesh->SetOwnerNoSee(true);
+	if (UStaticMesh* Cylinder = FLRProto::CylinderMesh())
+	{
+		PrototypeBodyMesh->SetStaticMesh(Cylinder);
+	}
+
+	PrototypeHeadMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PrototypeHeadMesh"));
+	PrototypeHeadMesh->SetupAttachment(GetCapsuleComponent());
+	PrototypeHeadMesh->SetRelativeLocation(FVector(0.f, 0.f, 85.f));
+	PrototypeHeadMesh->SetRelativeScale3D(FVector(0.3f, 0.3f, 0.3f));
+	PrototypeHeadMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	PrototypeHeadMesh->SetOwnerNoSee(true);
+	if (UStaticMesh* Sphere = FLRProto::SphereMesh())
+	{
+		PrototypeHeadMesh->SetStaticMesh(Sphere);
+	}
+
 	InteractionComponent = CreateDefaultSubobject<ULRInteractionComponent>(TEXT("InteractionComponent"));
 	InventoryComponent = CreateDefaultSubobject<ULRInventoryComponent>(TEXT("InventoryComponent"));
 
@@ -79,6 +102,9 @@ void ALRPlayerCharacter::BeginPlay()
 			ReviveComponent->PromptText = NSLOCTEXT("LastResponse", "ReviveTeammate", "Revive teammate");
 		}
 	}
+
+	FLRProto::ApplyColor(PrototypeBodyMesh, FLinearColor(0.95f, 0.42f, 0.08f));
+	FLRProto::ApplyColor(PrototypeHeadMesh, FLinearColor(0.92f, 0.76f, 0.6f));
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
 	{

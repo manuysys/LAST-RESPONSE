@@ -12,6 +12,7 @@ class UInputAction;
 class ULRInteractionComponent;
 class ULRInteractableComponent;
 class ULRInventoryComponent;
+class UStaticMeshComponent;
 
 UCLASS()
 class LASTRESPONSE_API ALRPlayerCharacter : public ACharacter
@@ -108,6 +109,12 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<USpotLightComponent> FlashlightComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UStaticMeshComponent> PrototypeBodyMesh;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UStaticMeshComponent> PrototypeHeadMesh;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<ULRInteractionComponent> InteractionComponent;

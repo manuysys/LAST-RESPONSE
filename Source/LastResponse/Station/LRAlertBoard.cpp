@@ -2,6 +2,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Game/LRGameInstance.h"
+#include "Prototype/LRPrototypeVisuals.h"
 
 ALRAlertBoard::ALRAlertBoard()
 {
@@ -10,6 +11,18 @@ ALRAlertBoard::ALRAlertBoard()
 
 	BoardMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BoardMesh"));
 	SetRootComponent(BoardMesh);
+	BoardMesh->SetRelativeScale3D(FVector(2.0f, 0.2f, 1.2f));
+	if (UStaticMesh* Cube = FLRProto::CubeMesh())
+	{
+		BoardMesh->SetStaticMesh(Cube);
+	}
+}
+
+void ALRAlertBoard::BeginPlay()
+{
+	Super::BeginPlay();
+
+	FLRProto::ApplyColor(BoardMesh, FLinearColor(0.12f, 0.14f, 0.22f));
 }
 
 void ALRAlertBoard::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

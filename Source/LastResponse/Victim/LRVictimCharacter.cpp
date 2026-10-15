@@ -1,6 +1,8 @@
 #include "Victim/LRVictimCharacter.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Prototype/LRPrototypeVisuals.h"
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -34,6 +36,25 @@ ALRVictimCharacter::ALRVictimCharacter()
 
 	AssistComponent = CreateDefaultSubobject<ULRVictimInteractableComponent>(TEXT("AssistComponent"));
 	AssistComponent->HoldDuration = 2.f;
+
+	PrototypeBodyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PrototypeBodyMesh"));
+	PrototypeBodyMesh->SetupAttachment(GetCapsuleComponent());
+	PrototypeBodyMesh->SetRelativeScale3D(FVector(0.55f, 0.55f, 1.76f));
+	PrototypeBodyMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	if (UStaticMesh* Cylinder = FLRProto::CylinderMesh())
+	{
+		PrototypeBodyMesh->SetStaticMesh(Cylinder);
+	}
+
+	PrototypeHeadMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PrototypeHeadMesh"));
+	PrototypeHeadMesh->SetupAttachment(GetCapsuleComponent());
+	PrototypeHeadMesh->SetRelativeLocation(FVector(0.f, 0.f, 85.f));
+	PrototypeHeadMesh->SetRelativeScale3D(FVector(0.3f, 0.3f, 0.3f));
+	PrototypeHeadMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	if (UStaticMesh* Sphere = FLRProto::SphereMesh())
+	{
+		PrototypeHeadMesh->SetStaticMesh(Sphere);
+	}
 }
 
 void ALRVictimCharacter::BeginPlay()
@@ -62,6 +83,9 @@ void ALRVictimCharacter::BeginPlay()
 	}
 
 	ApplyConditionToComponents();
+
+	FLRProto::ApplyColor(PrototypeBodyMesh, FLinearColor(0.72f, 0.09f, 0.09f));
+	FLRProto::ApplyColor(PrototypeHeadMesh, FLinearColor(0.92f, 0.76f, 0.6f));
 }
 
 void ALRVictimCharacter::ApplyConditionToComponents()
