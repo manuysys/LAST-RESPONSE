@@ -24,4 +24,13 @@ public:
 
 	UFUNCTION(exec)
 	void LR_TeleportToVictim();
+
+	UFUNCTION(exec)
+	void LR_CompleteObjective(FName ObjectiveId);
+
+	UFUNCTION(exec)
+	void LR_SetStorm(float Rain, float Wind);
+
+	UFUNCTION(exec)
+	void LR_AddBudget(int32 Amount);
 };

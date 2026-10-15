@@ -49,6 +49,11 @@ void ALRStormDirector::Tick(float DeltaSeconds)
 
 void ALRStormDirector::SetStorm(float NewRain, float NewWind)
 {
+	if (!HasAuthority())
+	{
+		return;
+	}
+
 	RainIntensity = FMath::Clamp(NewRain, 0.f, 1.f);
 	WindStrength = FMath::Clamp(NewWind, 0.f, 1.f);
 	OnRep_StormParams();

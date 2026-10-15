@@ -15,6 +15,7 @@
 #include "Interaction/LRInteractableComponent.h"
 #include "Meta/LRProgressionSubsystem.h"
 #include "Player/LRPlayerCharacter.h"
+#include "Vehicle/LRVehicleSeatInteractableComponent.h"
 
 ALRRescueVehicle::ALRRescueVehicle()
 {
@@ -42,7 +43,7 @@ ALRRescueVehicle::ALRRescueVehicle()
 	SirenLight->InnerConeAngle = 12.f;
 	SirenLight->OuterConeAngle = 30.f;
 
-	EnterComponent = CreateDefaultSubobject<ULRInteractableComponent>(TEXT("EnterComponent"));
+	EnterComponent = CreateDefaultSubobject<ULRVehicleSeatInteractableComponent>(TEXT("EnterComponent"));
 	EnterComponent->HoldDuration = 0.5f;
 
 	PassengerSeatOffsets = { FVector(-80.f, 40.f, 120.f), FVector(-160.f, -40.f, 120.f), FVector(-160.f, 40.f, 120.f) };
@@ -54,6 +55,7 @@ void ALRRescueVehicle::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 	DOREPLIFETIME(ALRRescueVehicle, Condition);
 	DOREPLIFETIME(ALRRescueVehicle, bSirenOn);
+	DOREPLIFETIME(ALRRescueVehicle, OccupantCount);
 }
 
 void ALRRescueVehicle::BeginPlay()
@@ -176,23 +178,78 @@ void ALRRescueVehicle::ServerSetDriveInput_Implementation(FVector2D DriveInput)
 
 void ALRRescueVehicle::ServerRequestExit_Implementation()
 {
-	ALRPlayerCharacter* Driver = DriverCharacter.Get();
-	if (Driver && Driver->GetController() == GetController())
+	APlayerController* RequestingController = Cast<APlayerController>(GetController());
+
+	if (DriverCharacter.IsValid() && DriverController.Get() == RequestingController)
 	{
-		DetachRider(Driver, true);
-		DriverCharacter = nullptr;
+		ForceEjectOccupant(DriverCharacter.Get());
 		return;
+	}
+
+	ALRPlayerCharacter* PassengerToEject = nullptr;
+	for (const TWeakObjectPtr<ALRPlayerCharacter>& Passenger : PassengerCharacters)
+	{
+		if (Passenger.IsValid() && Passenger->GetController() == RequestingController)
+		{
+			PassengerToEject = Passenger.Get();
+			break;
+		}
+	}
+
+	if (PassengerToEject)
+	{
+		ForceEjectOccupant(PassengerToEject);
+	}
+}
+
+bool ALRRescueVehicle::IsOccupant(const ALRPlayerCharacter* Player) const
+{
+	if (!Player)
+	{
+		return false;
+	}
+
+	if (DriverCharacter.Get() == Player)
+	{
+		return true;
 	}
 
 	for (const TWeakObjectPtr<ALRPlayerCharacter>& Passenger : PassengerCharacters)
 	{
-		if (Passenger.IsValid() && Passenger->GetController() == GetController())
+		if (Passenger.Get() == Player)
 		{
-			DetachRider(Passenger.Get(), false);
-			PassengerCharacters.Remove(Passenger);
-			return;
+			return true;
 		}
 	}
+
+	return false;
+}
+
+void ALRRescueVehicle::ForceEjectOccupant(ALRPlayerCharacter* Occupant)
+{
+	if (!HasAuthority() || !Occupant)
+	{
+		return;
+	}
+
+	if (DriverCharacter.Get() == Occupant)
+	{
+		DetachRider(Occupant, true);
+		DriverCharacter = nullptr;
+		UpdateOccupantCount();
+		return;
+	}
+
+	if (PassengerCharacters.Remove(Occupant) > 0)
+	{
+		DetachRider(Occupant, false);
+		UpdateOccupantCount();
+	}
+}
+
+void ALRRescueVehicle::UpdateOccupantCount()
+{
+	OccupantCount = (DriverCharacter.IsValid() ? 1 : 0) + PassengerCharacters.Num();
 }
 
 void ALRRescueVehicle::ServerToggleSiren_Implementation()
@@ -217,6 +274,7 @@ void ALRRescueVehicle::HandleEnterCompleted(ULRInteractableComponent* Interactab
 		{
 			DriverController->Possess(this);
 		}
+		UpdateOccupantCount();
 		return;
 	}
 
@@ -224,6 +282,7 @@ void ALRRescueVehicle::HandleEnterCompleted(ULRInteractableComponent* Interactab
 	{
 		AttachRider(Interactor, PassengerSeatOffsets[PassengerCharacters.Num()]);
 		PassengerCharacters.Add(Interactor);
+		UpdateOccupantCount();
 	}
 }
 

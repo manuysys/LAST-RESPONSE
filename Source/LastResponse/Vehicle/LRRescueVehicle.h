@@ -14,6 +14,7 @@ class USoundBase;
 class UInputMappingContext;
 class UInputAction;
 class ULRInteractableComponent;
+class ULRVehicleSeatInteractableComponent;
 class ALRPlayerCharacter;
 class APlayerController;
 
@@ -36,6 +37,12 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Vehicle")
 	bool HasDriver() const { return DriverCharacter.IsValid(); }
+
+	UFUNCTION(BlueprintPure, Category = "Vehicle")
+	bool HasFreeSeat() const { return OccupantCount < 1 + PassengerSeatOffsets.Num(); }
+
+	bool IsOccupant(const ALRPlayerCharacter* Player) const;
+	void ForceEjectOccupant(ALRPlayerCharacter* Occupant);
 
 	UFUNCTION(BlueprintCallable, Category = "Vehicle")
 	void RepairToFull();
@@ -95,7 +102,7 @@ protected:
 	TObjectPtr<USpotLightComponent> SirenLight;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	TObjectPtr<ULRInteractableComponent> EnterComponent;
+	TObjectPtr<ULRVehicleSeatInteractableComponent> EnterComponent;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputMappingContext> VehicleMappingContext;
@@ -142,8 +149,12 @@ protected:
 	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_SirenOn, BlueprintReadOnly, Category = "Vehicle")
 	bool bSirenOn = false;
 
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Vehicle")
+	int32 OccupantCount = 0;
+
 private:
 	void IntegrateDrive(float DeltaTime);
+	void UpdateOccupantCount();
 
 	TWeakObjectPtr<ALRPlayerCharacter> DriverCharacter;
 	TWeakObjectPtr<APlayerController> DriverController;

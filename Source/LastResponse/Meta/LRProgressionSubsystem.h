@@ -31,6 +31,9 @@ public:
 	bool TrySpendBudget(int32 Amount);
 
 	UFUNCTION(BlueprintCallable, Category = "Progression")
+	void AddBudget(int32 Amount);
+
+	UFUNCTION(BlueprintCallable, Category = "Progression")
 	void ApplyMissionResult(const FMissionReport& Report, FName ContractId);
 
 	UFUNCTION(BlueprintPure, Category = "Progression")

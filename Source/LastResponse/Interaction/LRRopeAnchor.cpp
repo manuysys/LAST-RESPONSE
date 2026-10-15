@@ -35,16 +35,19 @@ void ALRRopeAnchor::BeginPlay()
 
 void ALRRopeAnchor::HandleInteractionCompleted(ULRInteractableComponent* InteractableComponent, ALRPlayerCharacter* Interactor)
 {
-	if (bSecured || !LinkedAnchor || !RopeLineClass || !GetWorld())
+	if (bSecured || !LinkedAnchor || !GetWorld())
 	{
 		return;
 	}
 
 	bSecured = true;
 
-	if (ALRRopeLine* Line = GetWorld()->SpawnActor<ALRRopeLine>(RopeLineClass, FTransform::Identity))
+	if (LinkedAnchor->IsSecured() && RopeLineClass)
 	{
-		Line->Initialize(this, LinkedAnchor);
+		if (ALRRopeLine* Line = GetWorld()->SpawnActor<ALRRopeLine>(RopeLineClass, FTransform::Identity))
+		{
+			Line->Initialize(this, LinkedAnchor);
+		}
 	}
 
 	if (Interactable)

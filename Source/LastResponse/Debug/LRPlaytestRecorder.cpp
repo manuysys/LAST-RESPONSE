@@ -10,6 +10,7 @@ void ULRPlaytestRecorder::BeginSession(const FString& MapName)
 	Lines.Reset();
 	SessionMap = MapName;
 	SessionTimestamp = FDateTime::Now().ToString(TEXT("%Y%m%d_%H%M%S"));
+	SessionStartTime = FPlatformTime::Seconds();
 	bSessionActive = true;
 	RecordEvent(TEXT("Session"), FString::Printf(TEXT("Begin %s"), *MapName));
 }
@@ -21,8 +22,8 @@ void ULRPlaytestRecorder::RecordEvent(const FString& Category, const FString& De
 		return;
 	}
 
-	const double Elapsed = FPlatformTime::Seconds();
-	Lines.Add(FString::Printf(TEXT("%.1f,%s,%s"), Elapsed, *Category, *Detail));
+	const double Elapsed = FPlatformTime::Seconds() - SessionStartTime;
+	Lines.Add(FString::Printf(TEXT("%.2f,%s,%s"), Elapsed, *Category, *Detail));
 }
 
 void ULRPlaytestRecorder::EndSession(const FString& Summary)

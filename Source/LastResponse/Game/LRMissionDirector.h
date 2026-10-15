@@ -105,4 +105,6 @@ protected:
 private:
 	TArray<FName> CompletedObjectives;
 	bool bEndedNotified = false;
+	float SessionElapsedSeconds = 0.f;
+	float ReportElapsedTimer = 0.f;
 };

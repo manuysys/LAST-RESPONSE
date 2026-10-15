@@ -45,6 +45,13 @@ bool ULRProgressionSubsystem::TrySpendBudget(int32 Amount)
 	return true;
 }
 
+void ULRProgressionSubsystem::AddBudget(int32 Amount)
+{
+	EnsureSave();
+	StationSave->Budget = FMath::Max(StationSave->Budget + Amount, 0);
+	SaveStation();
+}
+
 void ULRProgressionSubsystem::ApplyMissionResult(const FMissionReport& Report, FName ContractId)
 {
 	EnsureSave();

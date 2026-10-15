@@ -25,5 +25,6 @@ private:
 	TArray<FString> Lines;
 	FString SessionMap;
 	FString SessionTimestamp;
+	double SessionStartTime = 0.0;
 	bool bSessionActive = false;
 };

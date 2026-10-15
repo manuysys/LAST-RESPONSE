@@ -57,6 +57,30 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Player")
 	void BP_OnDownedChanged(bool bNewDowned);
 
+	UFUNCTION(Server, Reliable)
+	void ServerCheatGiveTool(FName ToolId);
+
+	UFUNCTION(Server, Reliable)
+	void ServerCheatTeleportToVictim();
+
+	UFUNCTION(Server, Reliable)
+	void ServerCheatWinMission();
+
+	UFUNCTION(Server, Reliable)
+	void ServerCheatCompleteObjective(FName ObjectiveId);
+
+	UFUNCTION(Server, Reliable)
+	void ServerCheatSetStorm(float Rain, float Wind);
+
+	UFUNCTION(Server, Reliable)
+	void ServerCheatSetWater(float NewLevel);
+
+	UFUNCTION(Server, Reliable)
+	void ServerCheatForceRise(bool bRise);
+
+	UFUNCTION(Server, Reliable)
+	void ServerCheatAddBudget(int32 Amount);
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
@@ -123,6 +147,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Movement")
 	float MaxWaterSpeedMultiplier = 0.35f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Movement")
+	float ReviveTeleportDistance = 140.f;
 
 	UPROPERTY(ReplicatedUsing = OnRep_Downed, BlueprintReadOnly, Category = "Player")
 	bool bDowned = false;

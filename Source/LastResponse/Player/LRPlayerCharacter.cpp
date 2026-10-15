@@ -2,8 +2,10 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SpotLightComponent.h"
+#include "Engine/GameInstance.h"
 #include "Engine/LocalPlayer.h"
 #include "Engine/World.h"
+#include "EngineUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "Net/UnrealNetwork.h"
@@ -12,8 +14,13 @@
 #include "Game/LRGameMode.h"
 #include "Game/LRMissionDirector.h"
 #include "Interaction/LRInteractableComponent.h"
+#include "Meta/LRProgressionSubsystem.h"
 #include "Player/LRInteractionComponent.h"
 #include "Player/LRInventoryComponent.h"
+#include "Vehicle/LRRescueVehicle.h"
+#include "Victim/LRVictimCharacter.h"
+#include "World/LRStormDirector.h"
+#include "World/LRWaterDirector.h"
 
 ALRPlayerCharacter::ALRPlayerCharacter()
 {
@@ -118,6 +125,15 @@ void ALRPlayerCharacter::CheckSubmersion()
 		bDowned = true;
 		OnRep_Downed();
 
+		for (TActorIterator<ALRRescueVehicle> It(GetWorld()); It; ++It)
+		{
+			if (It->IsOccupant(this))
+			{
+				It->ForceEjectOccupant(this);
+				break;
+			}
+		}
+
 		if (GetCharacterMovement())
 		{
 			GetCharacterMovement()->DisableMovement();
@@ -145,6 +161,11 @@ void ALRPlayerCharacter::HandleReviveCompleted(ULRInteractableComponent* Interac
 	bDowned = false;
 	bIncapacitated = false;
 	OnRep_Downed();
+
+	const FVector SafeLocation = Interactor->GetActorLocation()
+		+ Interactor->GetActorForwardVector() * ReviveTeleportDistance
+		+ FVector(0.f, 0.f, 10.f);
+	SetActorLocation(SafeLocation, true, nullptr, ETeleportType::TeleportPhysics);
 
 	if (GetCharacterMovement())
 	{
@@ -314,4 +335,81 @@ void ALRPlayerCharacter::RefreshMaxWalkSpeed()
 	const float BaseSpeed = bSprinting ? SprintSpeed : WalkSpeed;
 	const float Multiplier = FMath::Lerp(1.f, MaxWaterSpeedMultiplier, WaterImmersion);
 	GetCharacterMovement()->MaxWalkSpeed = BaseSpeed * Multiplier;
+}
+
+void ALRPlayerCharacter::ServerCheatGiveTool_Implementation(FName ToolId)
+{
+	if (InventoryComponent)
+	{
+		InventoryComponent->AddTool(ToolId);
+	}
+}
+
+void ALRPlayerCharacter::ServerCheatTeleportToVictim_Implementation()
+{
+	for (TActorIterator<ALRVictimCharacter> It(GetWorld()); It; ++It)
+	{
+		if (!It->IsSafe())
+		{
+			SetActorLocation(It->GetActorLocation() + FVector(200.f, 0.f, 50.f), false, nullptr, ETeleportType::TeleportPhysics);
+			return;
+		}
+	}
+}
+
+void ALRPlayerCharacter::ServerCheatWinMission_Implementation()
+{
+	for (TActorIterator<ALRMissionDirector> It(GetWorld()); It; ++It)
+	{
+		It->EndMission(ELRMissionEndReason::Success);
+		return;
+	}
+}
+
+void ALRPlayerCharacter::ServerCheatCompleteObjective_Implementation(FName ObjectiveId)
+{
+	for (TActorIterator<ALRMissionDirector> It(GetWorld()); It; ++It)
+	{
+		It->CompleteObjective(ObjectiveId);
+		return;
+	}
+}
+
+void ALRPlayerCharacter::ServerCheatSetStorm_Implementation(float Rain, float Wind)
+{
+	if (ALRStormDirector* Storm = ALRStormDirector::FindStorm(GetWorld()))
+	{
+		Storm->SetStorm(Rain, Wind);
+	}
+}
+
+void ALRPlayerCharacter::ServerCheatSetWater_Implementation(float NewLevel)
+{
+	for (TActorIterator<ALRWaterDirector> It(GetWorld()); It; ++It)
+	{
+		It->SetWaterLevel(NewLevel);
+	}
+}
+
+void ALRPlayerCharacter::ServerCheatForceRise_Implementation(bool bRise)
+{
+	for (TActorIterator<ALRWaterDirector> It(GetWorld()); It; ++It)
+	{
+		if (bRise)
+		{
+			It->StartRise();
+		}
+		else
+		{
+			It->StopRise();
+		}
+	}
+}
+
+void ALRPlayerCharacter::ServerCheatAddBudget_Implementation(int32 Amount)
+{
+	if (ULRProgressionSubsystem* Progression = GetGameInstance() ? GetGameInstance()->GetSubsystem<ULRProgressionSubsystem>() : nullptr)
+	{
+		Progression->AddBudget(Amount);
+	}
 }

@@ -40,8 +40,6 @@ void ALRVictimCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	GetCharacterMovement()->MaxWalkSpeed = GetFollowSpeed();
-
 	if (DetectionSphere)
 	{
 		DetectionSphere->SetSphereRadius(DetectionRadius);
@@ -57,16 +55,40 @@ void ALRVictimCharacter::BeginPlay()
 	if (AssistComponent)
 	{
 		AssistComponent->OnInteractionCompleted.AddDynamic(this, &ALRVictimCharacter::HandleAssistCompleted);
-		AssistComponent->HoldDuration = GetAssistHoldDuration();
-		if (Condition == ELRVictimCondition::Critical && AssistComponent->RequiredToolId == NAME_None)
-		{
-			AssistComponent->RequiredToolId = TEXT("Medkit");
-		}
 		if (AssistComponent->PromptText.IsEmpty())
 		{
 			AssistComponent->PromptText = NSLOCTEXT("LastResponse", "AssistVictim", "Assist victim");
 		}
 	}
+
+	ApplyConditionToComponents();
+}
+
+void ALRVictimCharacter::ApplyConditionToComponents()
+{
+	if (AssistComponent)
+	{
+		AssistComponent->HoldDuration = GetAssistHoldDuration();
+
+		if (Condition == ELRVictimCondition::Critical)
+		{
+			AssistComponent->RequiredToolId = TEXT("Medkit");
+		}
+		else if (AssistComponent->RequiredToolId == TEXT("Medkit"))
+		{
+			AssistComponent->RequiredToolId = NAME_None;
+		}
+	}
+
+	if (GetCharacterMovement())
+	{
+		GetCharacterMovement()->MaxWalkSpeed = GetFollowSpeed();
+	}
+}
+
+void ALRVictimCharacter::OnRep_Condition()
+{
+	ApplyConditionToComponents();
 }
 
 void ALRVictimCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -164,14 +186,6 @@ void ALRVictimCharacter::OnRep_VictimState()
 	if (AssistComponent)
 	{
 		AssistComponent->bEnabled = VictimState != ELRVictimState::Evacuated;
-	}
-
-	if (VictimState == ELRVictimState::Assisted && !EscortTarget.IsValid() && HasAuthority())
-	{
-		if (ALRPlayerCharacter* Player = Cast<ALRPlayerCharacter>(GetWorld()->GetFirstPlayerController() ? GetWorld()->GetFirstPlayerController()->GetPawn() : nullptr))
-		{
-			EscortTarget = Player;
-		}
 	}
 
 	OnVictimStateChanged.Broadcast(this, VictimState);

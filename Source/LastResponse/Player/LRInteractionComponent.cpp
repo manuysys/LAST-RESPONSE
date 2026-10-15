@@ -80,12 +80,22 @@ float ULRInteractionComponent::GetHoldProgress() const
 {
 	if (bServerHolding)
 	{
+		if (const ULRCoopInteractableComponent* Coop = Cast<ULRCoopInteractableComponent>(ServerActiveTarget.Get()))
+		{
+			return Coop->GetCoopProgress();
+		}
+
 		const ULRInteractableComponent* ServerTarget = ServerActiveTarget.Get();
 		if (ServerTarget && ServerTarget->HoldDuration > 0.f)
 		{
 			return FMath::Clamp(ServerHoldElapsed / ServerTarget->HoldDuration, 0.f, 1.f);
 		}
 		return 0.f;
+	}
+
+	if (const ULRCoopInteractableComponent* Coop = Cast<ULRCoopInteractableComponent>(ActiveInteractable.Get()))
+	{
+		return Coop->GetCoopProgress();
 	}
 
 	const ULRInteractableComponent* Active = ActiveInteractable.Get();

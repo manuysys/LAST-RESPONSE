@@ -85,7 +85,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Victim")
 	float BaseFollowSpeed = 170.f;
 
-	UPROPERTY(EditAnywhere, Replicated, BlueprintReadOnly, Category = "Victim")
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Condition, BlueprintReadOnly, Category = "Victim")
 	ELRVictimCondition Condition = ELRVictimCondition::Stable;
 
 	UPROPERTY(ReplicatedUsing = OnRep_VictimState, BlueprintReadOnly, Category = "Victim")
@@ -94,6 +94,11 @@ protected:
 	UFUNCTION()
 	void OnRep_VictimState();
 
+	UFUNCTION()
+	void OnRep_Condition();
+
 private:
+	void ApplyConditionToComponents();
+
 	TWeakObjectPtr<ALRPlayerCharacter> EscortTarget;
 };

@@ -17,7 +17,7 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Session")
 	FContract GetActiveContract() const { return ActiveContract; }
 
-	UFUNCTION(BlueprintCallable, Category = "Session")
+	UFUNCTION(BlueprintPure, Category = "Session")
 	bool HasActiveContract() const { return ActiveContract.ContractId != NAME_None; }
 
 	UFUNCTION(BlueprintCallable, Category = "Session")

@@ -4,6 +4,7 @@
 #include "EngineUtils.h"
 #include "Net/UnrealNetwork.h"
 #include "Debug/LRPlaytestRecorder.h"
+#include "Game/LRGameInstance.h"
 #include "Meta/LRProgressionSubsystem.h"
 #include "Player/LRPlayerCharacter.h"
 #include "Vehicle/LRRescueVehicle.h"
@@ -70,9 +71,16 @@ void ALRMissionDirector::Tick(float DeltaSeconds)
 		return;
 	}
 
-	Report.ElapsedSeconds += DeltaSeconds;
+	SessionElapsedSeconds += DeltaSeconds;
+	ReportElapsedTimer += DeltaSeconds;
 
-	if (TimeLimitSeconds > 0.f && Report.ElapsedSeconds >= TimeLimitSeconds)
+	if (ReportElapsedTimer >= 1.f)
+	{
+		ReportElapsedTimer = 0.f;
+		Report.ElapsedSeconds = SessionElapsedSeconds;
+	}
+
+	if (TimeLimitSeconds > 0.f && SessionElapsedSeconds >= TimeLimitSeconds)
 	{
 		EndMission(ELRMissionEndReason::TimeExpired);
 		return;
@@ -92,6 +100,16 @@ void ALRMissionDirector::StartMission()
 	Report = FMissionReport();
 	Report.VictimsTotal = Victims.Num();
 	Report.ObjectivesTotal = Objectives.Num();
+	SessionElapsedSeconds = 0.f;
+	ReportElapsedTimer = 0.f;
+
+	if (ULRGameInstance* GameInstance = Cast<ULRGameInstance>(GetGameInstance()))
+	{
+		if (GameInstance->HasActiveContract())
+		{
+			ContractId = GameInstance->GetActiveContract().ContractId;
+		}
+	}
 
 	if (bStartWaterOnMissionStart && WaterDirector)
 	{
@@ -115,6 +133,7 @@ void ALRMissionDirector::EndMission(ELRMissionEndReason Reason)
 
 	Report.EndReason = Reason;
 	Report.VictimsEvacuated = 0;
+	Report.ElapsedSeconds = SessionElapsedSeconds;
 
 	for (const TObjectPtr<ALRVictimCharacter>& Victim : Victims)
 	{
